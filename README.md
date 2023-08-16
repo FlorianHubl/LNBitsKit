@@ -38,7 +38,7 @@ if try? await lnbits.testConnection() {
 }
 ```
 
-### Generating a Invoice
+### Generating an Invoice
 
 ```swift
 let invoice = try! await lnbits.createInvoice(sats: 21, memo: "Hello :)")
