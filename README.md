@@ -26,10 +26,6 @@ A Swift Package for interacting with LNBits.
 let lnbits = LNBits(server: "https://legend.lnbits.com", adminKey: "145a510c4ce1496e827e1fc34934b980", invoiceKey: "a04c53fec8524ba3aa63d8385e41c288")
 ```
 
-server is the server address
-adminKey is the admin key
-invoiceKey is the Invoice/read key
-
 These keys are in the Api docs in your LNBits Wallet.
 
 ### Testing connection
