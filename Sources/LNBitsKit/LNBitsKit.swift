@@ -69,13 +69,13 @@ public struct LNBits: Codable {
         return (i.balance / 1000, i.name)
     }
     
-    func decodeInvoice(invoice: String) async throws -> DecodedInvoiceUI {
+    func decodeInvoice(invoice: String) async throws -> DecodedInvoice {
         var request = getRequest(for: .payments, method: .post)
         request = add(payload: "{\"data\": \"\(invoice)\"}", request)
         let a = try await URLSession.shared.data(for: request)
         do {
             let decoded = try JSONDecoder().decode(DecodedInvoice.self, from: a.0)
-            return DecodedInvoiceUI(decoded: decoded, bolt11: invoice)
+            return decoded
         }catch {
             try handleError(data: a.0)
             fatalError()
@@ -96,9 +96,9 @@ public struct LNBits: Codable {
         }
     }
     
-    func payInvoice(invoice: DecodedInvoiceUI) async throws {
+    func payInvoice(invoice: String) async throws {
         var request = getRequest(for: .invoice, method: .post, admin: true)
-        request = add(payload: "{\"out\": true, \"bolt11\": \"\(invoice.bolt11)\"}", request)
+        request = add(payload: "{\"out\": true, \"bolt11\": \"\(invoice)\"}", request)
         let a = try await URLSession.shared.data(for: request)
         do {
             _ = try JSONDecoder().decode(InvoicePaid.self, from: a.0)
@@ -218,6 +218,10 @@ struct DecodedInvoice: Codable, Hashable {
         let secret: String
         let routeHints: [[RouteHint]]
         let minFinalCltvExpiry: Int
+    
+    var amount: Int {
+        amountMsat * 1000
+    }
 
         enum CodingKeys: String, CodingKey {
             case paymentHash = "payment_hash"
