@@ -79,4 +79,20 @@ let name = try await lnbits.getName()
 try await lnbits.changeName(name: "Wallet")
 ```
 
-### Coming soon: LNURL
+### Create a LNURLPay Link
+
+```swift
+let lnurl = try await lnbits.createLNURLPayLink()
+let link = lnurl.lnurl
+```
+
+### List all created LNURLPay Links
+
+```swift
+let lnurls = try await lnbits.getPayLinks()
+let links = lnurls.map { lnurl in
+    lnurl.lnurl
+}
+```
+
+### Working on: Listing Payments, Pay LNURL Pay Link, LNURL Withdraw and more.

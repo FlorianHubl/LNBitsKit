@@ -166,7 +166,7 @@ public struct LNBits: Codable {
         return lnurl
     }
     
-    public func getPayLink() async throws -> LNURLPayLinks {
+    public func getPayLinks() async throws -> LNURLPayLinks {
         let request = getRequest(for: .lnurlp, method: .get, urlExtention: "")
         let a = try await URLSession.shared.data(for: request)
         let list = try JSONDecoder().decode(LNURLPayLinks.self, from: a.0)
