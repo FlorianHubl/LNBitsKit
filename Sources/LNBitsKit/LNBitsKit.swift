@@ -166,10 +166,11 @@ public struct LNBits: Codable {
         return lnurl
     }
     
-    public func getPayLink() async throws {
+    public func getPayLink() async throws -> LNURLPayLinks {
         let request = getRequest(for: .lnurlp, method: .get, urlExtention: "")
         let a = try await URLSession.shared.data(for: request)
-        a.0.print()
+        let list = try JSONDecoder().decode(LNURLPayLinks.self, from: a.0)
+        return list
     }
 }
 
@@ -178,6 +179,8 @@ extension Data {
         Swift.print(String(data: self, encoding: .utf8)!)
     }
 }
+
+public typealias LNURLPayLinks = [LNURLPayLink]
 
 public struct LNURLPayLink: Codable {
     let id: String
