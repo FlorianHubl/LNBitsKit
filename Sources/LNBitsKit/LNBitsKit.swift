@@ -174,7 +174,7 @@ extension Data {
 }
 
 public struct LNURLPayLink: Codable {
-    let id: Int
+    let id: String
     let wallet: String
     let min, servedMeta, servedPR: Int
     let webhookURL, successText, successURL, currency: String?
