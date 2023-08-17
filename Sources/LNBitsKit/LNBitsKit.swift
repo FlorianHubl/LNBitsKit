@@ -167,7 +167,7 @@ public struct LNBits: Codable {
     }
     
     public func getPayLinks() async throws {
-        let request = getRequest(for: .lnurl, method: .get)
+        let request = getRequest(for: .lnurl, method: .get, urlExtention: "/1")
         let a = try await URLSession.shared.data(for: request)
         a.0.print()
     }
