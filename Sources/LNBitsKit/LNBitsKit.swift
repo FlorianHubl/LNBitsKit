@@ -7,22 +7,24 @@
 
 import Foundation
 
-enum LNBitsRequest: String {
-    case balance = "/api/v1/wallet"
-    case invoice = "/api/v1/payments"
-    case payments = "/api/v1/payments/decode"
-}
-
-enum HTTPMethod: String {
-    case get = "GET"
-    case post = "POST"
-}
-
 @available(iOS 13.0.0, *)
 public struct LNBits: Codable {
+    
     let server: String
     let adminKey: String
     let invoiceKey: String
+    
+    enum LNBitsRequest: String {
+        case balance = "/api/v1/wallet"
+        case invoice = "/api/v1/payments"
+        case payments = "/api/v1/payments/decode"
+    }
+
+    enum HTTPMethod: String {
+        case get = "GET"
+        case post = "POST"
+        case put = "PUT"
+    }
     
     public init(server: String, adminKey: String, invoiceKey: String) {
         self.server = server
