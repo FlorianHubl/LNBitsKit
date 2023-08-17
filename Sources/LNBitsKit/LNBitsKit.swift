@@ -30,7 +30,7 @@ public struct LNBits: Codable {
         self.invoiceKey = invoiceKey
     }
     
-    func testConnection() async -> Bool {
+    public func testConnection() async -> Bool {
         do {
             _ = try await getBalance()
             return true
@@ -39,37 +39,42 @@ public struct LNBits: Codable {
         }
     }
     
-    func getBalance() async throws -> Int {
+    public func getBalance() async throws -> Int {
         let a = try await URLSession.shared.data(for: getRequest(for: .balance, method: .get))
         return try JSONDecoder().decode(Balance.self, from: a.0).balance / 1000
     }
     
-    func createInvoice(sats: Int, memo: String? = nil) async throws -> Invoice {
+    public func createInvoice(sats: Int, memo: String? = nil) async throws -> Invoice {
         let a = getRequest(for: .invoice, method: .post)
         let b = add(payload: "{\"out\": false, \"amount\": \(sats), \"memo\": \"\(memo ?? "")\"}", a)
         let c = try await URLSession.shared.data(for: b)
         return try JSONDecoder().decode(Invoice.self, from: c.0)
     }
     
-    func checkIfPaid(invoice: Invoice) async throws -> Bool {
+    public func checkIfPaid(invoice: Invoice) async throws -> Bool {
         let a = getRequest(for: .invoice, method: .get, urlExtention: invoice.paymentHash)
         let b = try await URLSession.shared.data(for: a)
         let c = try JSONDecoder().decode(CheckPaid.self, from: b.0)
         return c.paid
     }
     
-    func getName() async throws -> String {
+    public func getName() async throws -> String {
         let a = try await URLSession.shared.data(for: getRequest(for: .balance, method: .get))
         return try JSONDecoder().decode(Balance.self, from: a.0).name
     }
     
-    func getBalanceName() async throws -> (Int, String) {
+    public func getBalanceName() async throws -> (Int, String) {
         let a = try await URLSession.shared.data(for: getRequest(for: .balance, method: .get))
         let i = try JSONDecoder().decode(Balance.self, from: a.0)
         return (i.balance / 1000, i.name)
     }
     
-    func decodeInvoice(invoice: String) async throws -> DecodedInvoice {
+    public func changeName(newName: String) async throws {
+        let request = getRequest(for: .payments, method: .post, urlExtention: newName)
+        _ = try await URLSession.shared.data(for: request)
+    }
+    
+    public func decodeInvoice(invoice: String) async throws -> DecodedInvoice {
         var request = getRequest(for: .payments, method: .post)
         request = add(payload: "{\"data\": \"\(invoice)\"}", request)
         let a = try await URLSession.shared.data(for: request)
@@ -87,7 +92,7 @@ public struct LNBits: Codable {
     }
 
     
-    func handleError(data: Data) throws {
+    public func handleError(data: Data) throws {
         let decoded = try? JSONDecoder().decode(LNBitsError.self, from: data)
         if let error = decoded {
             throw LNBitsErr(errorDescription: error.detail)
@@ -96,7 +101,7 @@ public struct LNBits: Codable {
         }
     }
     
-    func payInvoice(invoice: String) async throws {
+    public func payInvoice(invoice: String) async throws {
         var request = getRequest(for: .invoice, method: .post, admin: true)
         request = add(payload: "{\"out\": true, \"bolt11\": \"\(invoice)\"}", request)
         let a = try await URLSession.shared.data(for: request)
@@ -108,11 +113,11 @@ public struct LNBits: Codable {
         }
     }
     
-    func getTXs() async throws -> LNBitsTransactions {
+    public func getTXs() async throws -> [LNBitsTransaction] {
         let request = getRequest(for: .invoice, method: .get)
         let a = try await URLSession.shared.data(for: request)
         do {
-            var txs = try JSONDecoder().decode(LNBitsTransactions.self, from: a.0)
+            var txs = try JSONDecoder().decode([LNBitsTransaction].self, from: a.0)
             
             for (index, item) in txs.enumerated() {
                 txs[index].amount = item.amount / 1000
@@ -147,12 +152,12 @@ public struct LNBits: Codable {
     }
 }
 
-struct Balance: Codable {
+public struct Balance: Codable {
     let name: String
     let balance: Int
 }
 
-struct Invoice: Codable, Hashable, Equatable {
+public struct Invoice: Codable, Hashable, Equatable {
     let paymentHash, paymentRequest, checkingID: String
 
     enum CodingKeys: String, CodingKey {
@@ -164,11 +169,11 @@ struct Invoice: Codable, Hashable, Equatable {
     static let demo = Invoice(paymentHash: "", paymentRequest: "", checkingID: "")
 }
 
-struct LNBitsError: Codable {
+public struct LNBitsError: Codable {
     let detail: String
 }
 
-struct CheckPaid: Codable {
+public struct CheckPaid: Codable {
     let paid: Bool
     let preimage: String
 }
@@ -197,12 +202,12 @@ struct DecodedInvoiceUI: Codable, Hashable {
     static let demo = DecodedInvoiceUI(decoded: .demo, bolt11: "")
 }
 
-struct DecodedInvoice: Codable, Hashable {
-    static func == (lhs: DecodedInvoice, rhs: DecodedInvoice) -> Bool {
+public struct DecodedInvoice: Codable, Hashable {
+    static public func == (lhs: DecodedInvoice, rhs: DecodedInvoice) -> Bool {
         lhs.paymentHash == rhs.paymentHash
     }
     
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         
     }
     
@@ -251,7 +256,7 @@ struct DecodedInvoice: Codable, Hashable {
             throw DecodingError.typeMismatch(RouteHint.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for RouteHint"))
         }
 
-        func encode(to encoder: Encoder) throws {
+        public func encode(to encoder: Encoder) throws {
             var container = encoder.singleValueContainer()
             switch self {
             case .integer(let x):
@@ -270,7 +275,7 @@ struct DecodedInvoice: Codable, Hashable {
             return true
         }
         
-        func hash(into hasher: inout Hasher) {
+        public func hash(into hasher: inout Hasher) {
         }
 
         public init() {}
@@ -288,7 +293,7 @@ struct DecodedInvoice: Codable, Hashable {
         }
     }
 
-struct LNBitsTransaction: Codable {
+public struct LNBitsTransaction: Codable {
     let checking_id: String
     let pending: Bool
     var amount: Int
@@ -302,4 +307,3 @@ struct LNBitsTransaction: Codable {
 
 
 typealias LNBitsTransactions = [LNBitsTransaction]
-
