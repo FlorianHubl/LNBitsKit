@@ -19,6 +19,7 @@ public struct LNBits: Codable {
         case invoice = "/api/v1/payments"
         case payments = "/api/v1/payments/decode"
         case lnurlp = "/lnurlp/api/v1/links"
+        case lnurl = "/lnurlp"
     }
 
     enum HTTPMethod: String {
@@ -161,9 +162,14 @@ public struct LNBits: Codable {
         var request = getRequest(for: .lnurlp, method: .post)
         request = add(payload: "{\"description\": \"\(name ?? "")\", \"amount\": \(standardAmount ?? 1), \"max\": \(max ?? 100000000), \"min\": \(min ?? 1), \"comment_chars\": \(commentChars ?? 100)}", request)
         let a = try await URLSession.shared.data(for: request)
-        a.0.print()
         let lnurl = try JSONDecoder().decode(LNURLPayLink.self, from: a.0)
         return lnurl
+    }
+    
+    public func getPayLinks() async throws {
+        let request = getRequest(for: .lnurl, method: .get)
+        let a = try await URLSession.shared.data(for: request)
+        a.0.print()
     }
 }
 
