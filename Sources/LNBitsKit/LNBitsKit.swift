@@ -18,6 +18,7 @@ public struct LNBits: Codable {
         case balance = "/api/v1/wallet"
         case invoice = "/api/v1/payments"
         case payments = "/api/v1/payments/decode"
+        case lnurlp = "/lnurlp/api/v1/links"
     }
 
     enum HTTPMethod: String {
@@ -152,6 +153,64 @@ public struct LNBits: Codable {
         print(payload)
         url.httpBody = payload.data(using: .utf8)
         return url
+    }
+    
+    // LNURLPay
+    
+    func createLNURLPayLink(name: String? = nil, standardAmount: Int? = nil, min: Int? = nil, max: Int? = nil, commentChars: Int? = nil) async throws -> LNURLPayLink {
+        var request = getRequest(for: .lnurlp, method: .post)
+        request = add(payload: "{\"description\": \"\(name ?? "")\", \"amount\": \(standardAmount ?? 1), \"max\": \(max ?? 100000000), \"min\": \(min ?? 1), \"comment_chars\": \(commentChars ?? 100)}", request)
+        let a = try await URLSession.shared.data(for: request)
+        let lnurl = try JSONDecoder().decode(LNURLPayLink.self, from: a.0)
+        return lnurl
+    }
+}
+
+public struct LNURLPayLink: Codable {
+    let id: Int
+    let wallet, welcomeDescription: String
+    let min, servedMeta, servedPR: Int
+    let webhookURL, successText, successURL, currency: J3?
+    let commentChars, max, fiatBaseMultiplier: Int
+    let lnurl: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, wallet
+        case welcomeDescription = "description"
+        case min
+        case servedMeta = "served_meta"
+        case servedPR = "served_pr"
+        case webhookURL = "webhook_url"
+        case successText = "success_text"
+        case successURL = "success_url"
+        case currency
+        case commentChars = "comment_chars"
+        case max
+        case fiatBaseMultiplier = "fiat_base_multiplier"
+        case lnurl
+    }
+    class J3: Codable, Hashable {
+
+        public static func == (lhs: J3, rhs: J3) -> Bool {
+            return true
+        }
+
+        func hash(into hasher: inout Hasher) {
+        }
+
+        public init() {}
+
+        public required init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if !container.decodeNil() {
+                throw DecodingError.typeMismatch(J3.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for J3"))
+            }
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encodeNil()
+        }
     }
 }
 
