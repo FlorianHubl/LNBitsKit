@@ -70,7 +70,7 @@ public struct LNBits: Codable {
     }
     
     public func changeName(newName: String) async throws {
-        let request = getRequest(for: .payments, method: .post, urlExtention: newName)
+        let request = getRequest(for: .balance, method: .post, urlExtention: newName)
         _ = try await URLSession.shared.data(for: request)
     }
     
