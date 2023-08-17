@@ -175,15 +175,16 @@ extension Data {
 
 public struct LNURLPayLink: Codable {
     let id: Int
-    let wallet, welcomeDescription: String
+    let wallet: String
     let min, servedMeta, servedPR: Int
-    let webhookURL, successText, successURL, currency: J3?
+    let webhookURL, successText, successURL, currency: String?
     let commentChars, max, fiatBaseMultiplier: Int
     let lnurl: String
+    let zaps: Bool?
+    let domain: String?
 
     enum CodingKeys: String, CodingKey {
         case id, wallet
-        case welcomeDescription = "description"
         case min
         case servedMeta = "served_meta"
         case servedPR = "served_pr"
@@ -195,29 +196,8 @@ public struct LNURLPayLink: Codable {
         case max
         case fiatBaseMultiplier = "fiat_base_multiplier"
         case lnurl
-    }
-    class J3: Codable, Hashable {
-
-        public static func == (lhs: J3, rhs: J3) -> Bool {
-            return true
-        }
-
-        func hash(into hasher: inout Hasher) {
-        }
-
-        public init() {}
-
-        public required init(from decoder: Decoder) throws {
-            let container = try decoder.singleValueContainer()
-            if !container.decodeNil() {
-                throw DecodingError.typeMismatch(J3.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Wrong type for J3"))
-            }
-        }
-
-        public func encode(to encoder: Encoder) throws {
-            var container = encoder.singleValueContainer()
-            try container.encodeNil()
-        }
+        case zaps
+        case domain
     }
 }
 
