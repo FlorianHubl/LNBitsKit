@@ -206,7 +206,7 @@ try await lnbits.refundSubMarineSwap(swapID: "mySwapID")
 let swap = try await lnbitscreateReversedSubMarineSwap(amount: 100000, onChainAddress: "bc1qbitcoinfixesthis")
 ```
 
-### List Reverse Sub Marine Swap
+### List Boltz Reverse Sub Marine Swaps
 
 ```swift
 let swap = try await lnbits.getReversedSubMarineSwaps()
