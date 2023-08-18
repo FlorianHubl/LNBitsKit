@@ -18,7 +18,7 @@ A Swift Package for interacting with LNBits.
 - tvOS 6 or higher
 - watchOS 6 or higher
 
-## Demo
+## Documentation
 
 ### Connecting to LNBits
 
