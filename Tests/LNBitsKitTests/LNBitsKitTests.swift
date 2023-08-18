@@ -7,9 +7,9 @@ final class LNBitsKitTests: XCTestCase {
             let lnbits = LNBits(server: "https://legend.lnbits.com", adminKey: "83da52da85644e5d9c67cb0dc82aca00", invoiceKey: "c5ad8da7193140a5bc95012f349fd852")
             
             print("Done")
-            let lnurl = try await lnbits.deleteLNURLWithdraw(id: "")
-//
-                    // Check connection
+            try await lnbits.lnurlAuth(lnurl: "LNURL1DP68GURN8GHJ7MRFVA58GMNFDENKCMM8D9HZUMRFWEJJ7MR0VA5KU0MTXY7NZCN9VVENZWPSVSERWWF5VCEXYEP3XS6XYDF3X5MR2DMYXQMXXCF3V43RJDM9VYUNQVP3X43RGWF3XQMNWDMPVDSKYVP4XPJRXWFKVCN8GCT884KX7EMFDCKLCFWU")
+            
+            // Check connection
                     
 //                    if await lnbits.testConnection() {
 //

@@ -198,7 +198,7 @@ public struct LNBits: Codable {
             return DecodedLNURL(lnurl: lnurl, kind: .withdraw, min: c.minWithdrawable / 1000, max: c.maxWithdrawable / 1000, description: c.defaultDescription, domain: c.domain, callback: c.callback, descriptionHash: c.defaultDescription)
         case .auth:
             let c = try JSONDecoder().decode(DecodedLNURLAuth.self, from: a.0)
-            return DecodedLNURL(lnurl: lnurl, kind: .auth, domain: c.domain)
+            return DecodedLNURL(lnurl: lnurl, kind: .auth, domain: c.domain, callback: c.callback)
         }
     }
     
@@ -245,12 +245,11 @@ public struct LNBits: Codable {
         let lnurlBackURL = ln.callback! + "&pr=" + invoice.paymentRequest
         
         var request = URLRequest(url: URL(string: lnurlBackURL)!)
+        request.addValue(invoiceKey, forHTTPHeaderField: "X-Api-Key")
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let result = try await URLSession.shared.data(for: request)
-        
-        let status = try JSONDecoder().decode(Status.self, from: result.0)
 
         try handleError(data: result.0)
     }
@@ -267,11 +266,21 @@ public struct LNBits: Codable {
         try handleError(data: result.0)
     }
     
-    
-    
-    
-    
-    
+    func lnurlAuth(lnurl: String) async throws {
+        let ln = try await decodeLNURL(lnurl: lnurl)
+        
+        guard ln.kind == .auth else {throw LNBitsErr.error("LNBits Error: LNURL is not auth")}
+        
+        var request = URLRequest(url: URL(string: "\(server)/api/v1/lnurlauth")!)
+        request.addValue(adminKey, forHTTPHeaderField: "X-Api-Key")
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = "{\"callback\": \"\(ln.callback!)\"}".data(using: .utf8)
+        
+        let result = try await URLSession.shared.data(for: request)
+        
+        try handleError(data: result.0)
+    }
 }
 
 // --------------------------------- Models ------------------------------------
@@ -365,13 +374,13 @@ public struct DecodedLNURL: Codable {
         self.descriptionHash = descriptionHash
     }
     
-    init(lnurl: String, kind: LNURLType, domain: String) {
+    init(lnurl: String, kind: LNURLType, domain: String, callback: String) {
         self.lnurl = lnurl
         self.kind = kind
+        self.callback = callback
         self.min = nil
         self.max = nil
         self.description = nil
-        self.callback = nil
         self.descriptionHash = nil
         self.domain = domain
     }

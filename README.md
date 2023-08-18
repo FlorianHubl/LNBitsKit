@@ -164,9 +164,9 @@ try await lnbits.deleteLNURLPay(id: lnurl.id)
 try await lnbits.deleteLNURLWithdraw(id: "BTC21M")
 ```
 
+### LNURL Auth
 
-### Working on: LNURL Auth.
-
-
-
+```swift
+try await lnbits.lnurlAuth(lnurl: "LNURLLOGINWITHLIGHTNING")
+```
 
