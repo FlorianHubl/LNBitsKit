@@ -20,6 +20,8 @@ public struct LNBits: Codable {
         case payments = "/api/v1/payments/decode"
         case lnurlp = "/lnurlp/api/v1/links"
         case lnurl = "/lnurlp"
+        case lnurlScan = "/api/v1/lnurlscan"
+        case paylnurlp = "/api/v1/payments/lnurl"
     }
 
     enum HTTPMethod: String {
@@ -49,9 +51,8 @@ public struct LNBits: Codable {
     }
     
     public func createInvoice(sats: Int, memo: String? = nil) async throws -> Invoice {
-        let a = getRequest(for: .invoice, method: .post)
-        let b = add(payload: "{\"out\": false, \"amount\": \(sats), \"memo\": \"\(memo ?? "")\"}", a)
-        let c = try await URLSession.shared.data(for: b)
+        let a = getRequest(for: .invoice, method: .post, payLoad: "{\"out\": false, \"amount\": \(sats), \"memo\": \"\(memo ?? "")\"}")
+        let c = try await URLSession.shared.data(for: a)
         return try JSONDecoder().decode(Invoice.self, from: c.0)
     }
     
@@ -80,8 +81,7 @@ public struct LNBits: Codable {
     }
     
     public func decodeInvoice(invoice: String) async throws -> DecodedInvoice {
-        var request = getRequest(for: .payments, method: .post)
-        request = add(payload: "{\"data\": \"\(invoice)\"}", request)
+        let request = getRequest(for: .payments, method: .post, payLoad: "{\"data\": \"\(invoice)\"}")
         let a = try await URLSession.shared.data(for: request)
         do {
             let decoded = try JSONDecoder().decode(DecodedInvoice.self, from: a.0)
@@ -107,8 +107,7 @@ public struct LNBits: Codable {
     }
     
     public func payInvoice(invoice: String) async throws {
-        var request = getRequest(for: .invoice, method: .post, admin: true)
-        request = add(payload: "{\"out\": true, \"bolt11\": \"\(invoice)\"}", request)
+        let request = getRequest(for: .invoice, method: .post, payLoad: "{\"out\": true, \"bolt11\": \"\(invoice)\"}", admin: true)
         let a = try await URLSession.shared.data(for: request)
         do {
             _ = try JSONDecoder().decode(InvoicePaid.self, from: a.0)
@@ -117,6 +116,8 @@ public struct LNBits: Codable {
             fatalError()
         }
     }
+    
+    // List Transactions
     
     public func getTXs() async throws -> [LNBitsTransaction] {
         let request = getRequest(for: .invoice, method: .get)
@@ -140,10 +141,13 @@ public struct LNBits: Codable {
         }
     }
     
-    private func getRequest(for i: LNBitsRequest, method: HTTPMethod, urlExtention: String? = nil, admin: Bool = false) -> URLRequest {
-        var request = URLRequest(url: URL(string: "\(server)\(i.rawValue)\(urlExtention == nil ? "" : "/\(urlExtention!)")")!)
+    private func getRequest(for i: LNBitsRequest, method: HTTPMethod, urlExtention: String? = nil, payLoad: String? = nil, admin: Bool = false) -> URLRequest {
+        var request = URLRequest(url: URL(string: "\(server)\(i.rawValue)/\(urlExtention ?? "")")!)
         print(request.url!.absoluteString)
         request.httpMethod = method.rawValue
+        if let payLoad = payLoad {
+            request = add(payload: payLoad, request)
+        }
         request.addValue(admin ? adminKey : invoiceKey, forHTTPHeaderField: "X-Api-Key")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         return request
@@ -159,8 +163,7 @@ public struct LNBits: Codable {
     // LNURLPay
     
     public func createLNURLPayLink(name: String? = nil, standardAmount: Int? = nil, min: Int? = nil, max: Int? = nil, commentChars: Int? = nil) async throws -> LNURLPayLink {
-        var request = getRequest(for: .lnurlp, method: .post)
-        request = add(payload: "{\"description\": \"\(name ?? "")\", \"amount\": \(standardAmount ?? 1), \"max\": \(max ?? 100000000), \"min\": \(min ?? 1), \"comment_chars\": \(commentChars ?? 100)}", request)
+        var request = getRequest(for: .lnurlp, method: .post, payLoad: "{\"description\": \"\(name ?? "")\", \"amount\": \(standardAmount ?? 1), \"max\": \(max ?? 100000000), \"min\": \(min ?? 1), \"comment_chars\": \(commentChars ?? 100)}")
         let a = try await URLSession.shared.data(for: request)
         let lnurl = try JSONDecoder().decode(LNURLPayLink.self, from: a.0)
         return lnurl
@@ -172,11 +175,152 @@ public struct LNBits: Codable {
         let list = try JSONDecoder().decode(LNURLPayLinks.self, from: a.0)
         return list
     }
+    
+    // Decode LNURL
+    
+    func decodeLNURL(_ lnurl: String) async throws -> DecodedLNURL {
+        
+        let request = getRequest(for: .lnurlScan, method: .get, urlExtention: lnurl)
+        
+        let a = try await URLSession.shared.data(for: request)
+        
+        a.0.print()
+        
+        let b = try JSONDecoder().decode(DecodedLNURLType.self, from: a.0)
+        
+        switch b.kind {
+        case .pay:
+            let c = try JSONDecoder().decode(DecodedLNURLP.self, from: a.0)
+            return DecodedLNURL(lnurl: lnurl, kind: .pay, min: c.minSendable / 1000, max: c.maxSendable / 1000, description: c.description, domain: c.domain, callback: c.callback, descriptionHash: c.descriptionHash)
+        case .withdraw:
+            let c = try JSONDecoder().decode(DecodedLNURLW.self, from: a.0)
+            return DecodedLNURL(lnurl: lnurl, kind: .withdraw, min: c.minWithdrawable / 1000, max: c.maxWithdrawable / 1000, description: c.defaultDescription, domain: c.domain, callback: c.callback, descriptionHash: c.defaultDescription)
+        case .auth:
+            let c = try JSONDecoder().decode(DecodedLNURLAuth.self, from: a.0)
+            return DecodedLNURL(lnurl: lnurl, kind: .auth, domain: c.domain)
+        }
+    }
+    
+    // Pay LNURL Pay Link
+    
+    func payLNURL(_ lnurl: String, amount: Int) async throws {
+        let decoded = try await decodeLNURL(lnurl)
+        print(decoded)
+        print(decoded.callback!)
+        print(decoded.descriptionHash!)
+        guard decoded.kind == .pay else {throw LNBitsErr.init(errorDescription: "LNBits Error: LNURL is not a Pay Link")}
+        var request = getRequest(for: .paylnurlp, method: .post, payLoad: "{\"description_hash\": \"\(decoded.descriptionHash!)\", \"callback\": \"\(decoded.callback!)\", \"amount\": \(amount * 1000), \"comment\": \"\", \"description\": \"\"}", admin: true)
+        _ = try await URLSession.shared.data(for: request)
+    }
+    
+    struct DecodedLNURLType: Codable {
+        let kind: LNURLType
+    }
+    
+    // Create LNURL
+    
+    func createLNURLWithdraw() {
+        
+    }
+    
+    // List LNURLW
+    
+    func listLNURLWithdraw() {
+        
+    }
+    
+    // Withdraw LNURL Withdraw Link
+    
+    func withdrawLNURLWithdraw() {
+        
+    }
+    
+    
+    
 }
+
+public struct DecodedLNURLP: Codable {
+    let domain, tag: String
+    let callback: String
+    let minSendable, maxSendable: Int
+    let metadata: String
+    let kind: LNURLType
+    let fixed: Bool
+    let descriptionHash, description: String
+    let commentAllowed: Int
+
+    enum CodingKeys: String, CodingKey {
+        case domain, tag, callback, minSendable, maxSendable, metadata, kind, fixed
+        case descriptionHash = "description_hash"
+        case description, commentAllowed
+    }
+}
+
+public struct DecodedLNURLW: Codable {
+    let domain: String
+    let tag: String
+    let callback: String
+    let k1: String
+    let minWithdrawable, maxWithdrawable: Int
+    let defaultDescription: String
+    let kind: LNURLType
+    let fixed: Bool
+}
+
+public struct DecodedLNURLAuth: Codable {
+    let domain: String
+    let kind: LNURLType
+    let callback: String
+    let pubkey: String
+}
+
+public struct DecodedLNURL: Codable {
+    let lnurl: String
+    let kind: LNURLType
+    let min, max: Int?
+    let description: String?
+    let domain: String
+    let callback: String?
+    let descriptionHash: String?
+    
+    init(lnurl: String, kind: LNURLType, min: Int?, max: Int?, description: String?, domain: String, callback: String, descriptionHash: String) {
+        self.lnurl = lnurl
+        self.kind = kind
+        self.min = min
+        self.max = max
+        self.description = description
+        self.domain = domain
+        self.callback = callback
+        self.descriptionHash = descriptionHash
+    }
+    
+    init(lnurl: String, kind: LNURLType, domain: String) {
+        self.lnurl = lnurl
+        self.kind = kind
+        self.min = nil
+        self.max = nil
+        self.description = nil
+        self.callback = nil
+        self.descriptionHash = nil
+        self.domain = domain
+    }
+}
+
+public enum LNURLType: String, Codable {
+    case pay
+    case withdraw
+    case auth
+}
+
+
+
 
 extension Data {
     func print() {
         Swift.print(String(data: self, encoding: .utf8)!)
+    }
+    func string() -> String {
+        String(data: self, encoding: .utf8)!
     }
 }
 

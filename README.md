@@ -73,6 +73,12 @@ The balance is in sats.
 let name = try await lnbits.getName()
 ```
 
+### List all Transactions
+
+```swift
+let txs = try await lnbits.getTXs()
+```
+
 ### Change Wallet Name
 
 ```swift
@@ -95,5 +101,24 @@ let links = lnurls.map { lnurl in
 }
 ```
 
-### Working on: Listing Payments, Pay LNURL Pay Link, LNURL Withdraw and more.
+### Decode LNURL
+
+```swift
+let lnurl = try await lnbits.decodeLNURL("LNURLBITCOINISAWESOME")
+switch lnurl.kind {
+    case .pay:
+    // LNURL Pay
+    case .withdraw:
+    // LNURL Withdraw
+    case .auth:
+    // LNURL Auth
+}
+```
+
+### Pay LNURL Link
+```swift
+try await lnbits.payLNURL("LNURLBITCOINISAWESOME", amount: 21)
+```
+
+### Working on: LNURL Withdraw and LNURL Auth.
 
