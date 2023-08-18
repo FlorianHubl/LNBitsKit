@@ -12,11 +12,7 @@ A Swift Package for interacting with LNBits.
 ## Requirements
 
 - iOS 13 or higher
-- iPadOS 13 or higher
-- macOS 10.15 or higher
-- Mac Catalyst 13 or higher
-- tvOS 6 or higher
-- watchOS 6 or higher
+- macOS 12 or higher
 
 ## Documentation
 
