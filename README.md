@@ -183,7 +183,7 @@ do {
 ### Boltz Sub Marine Swap
 
 ```swift
-let swap = await try lnbits.createSubMarineSwap(amount: 100000, refundAddress: "bc1qbitcoinfixesthis")
+let swap = try await lnbits.createSubMarineSwap(amount: 100000, refundAddress: "bc1qbitcoinfixesthis")
 ```
 
 Min 50000 sats per Swap.
@@ -191,23 +191,23 @@ Min 50000 sats per Swap.
 ### List Boltz Sub Marine Swaps
 
 ```swift
-let swaps = await try lnbits.getSubMarineSwaps()
+let swaps = try await lnbits.getSubMarineSwaps()
 ```
 
 ### Refund Boltz Sub Marine Swap
 
 ```swift
-await try lnbits.refundSubMarineSwap(swapID: "mySwapID")
+try await lnbits.refundSubMarineSwap(swapID: "mySwapID")
 ```
 
 ### Boltz Reverse Sub Marine Swap
 
 ```swift
-let swap = await try lnbitscreateReversedSubMarineSwap(amount: 100000, onChainAddress: "bc1qbitcoinfixesthis")
+let swap = try await lnbitscreateReversedSubMarineSwap(amount: 100000, onChainAddress: "bc1qbitcoinfixesthis")
 ```
 
 ### List Reverse Sub Marine Swap
 
 ```swift
-let swap = await try lnbits.getReversedSubMarineSwaps()
+let swap = try await lnbits.getReversedSubMarineSwaps()
 ```
