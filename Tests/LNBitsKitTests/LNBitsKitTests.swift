@@ -6,11 +6,9 @@ final class LNBitsKitTests: XCTestCase {
         if #available(iOS 13.0.0, *) {
             let lnbits = LNBits(server: "https://legend.lnbits.com", adminKey: "83da52da85644e5d9c67cb0dc82aca00", invoiceKey: "c5ad8da7193140a5bc95012f349fd852")
             
-            do {
-                try await lnbits.withdrawFromLNURLWithdraw(lnurl: "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7KRFXFH9VNJXD569JAMGDEUHWVJXT9T4XJRX9AZXGA6VV33NXN352DCNGAMEXEV5UM3EW4R95066VQJ")
-            }catch LNBitsErr.error(let a) {
-                print(a)
-            }
+            print("Done")
+            let lnurl = try await lnbits.deleteLNURLWithdraw(id: "")
+//
                     // Check connection
                     
 //                    if await lnbits.testConnection() {

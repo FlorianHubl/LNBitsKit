@@ -146,10 +146,26 @@ But you can also set an amount.
 try! await lnbits.withdrawFromLNURLWithdraw(lnurl: "LNURLBITCOINISAWESOME", amount: 21)
 ```
 
+### Delete LNURL Pay Link
+```swift
+try await lnbits.deleteLNURLPay(id: "BTC21M")
+```
+
+The ID is in the LNURLPay Object.
+
+```swift
+let lnurl = try await lnbits.createLNURLPayLink()
+try await lnbits.deleteLNURLPay(id: lnurl.id)
+```
+
+### Delete LNURL Withdraw Link
+
+```swift
+try await lnbits.deleteLNURLWithdraw(id: "BTC21M")
+```
 
 
-
-### Working on: Delete LNURL Link and LNURL Auth.
+### Working on: LNURL Auth.
 
 
 

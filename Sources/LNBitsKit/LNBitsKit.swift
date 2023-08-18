@@ -29,6 +29,7 @@ public struct LNBits: Codable {
         case get = "GET"
         case post = "POST"
         case put = "PUT"
+        case delete = "DELETE"
     }
     
     public init(server: String, adminKey: String, invoiceKey: String) {
@@ -96,12 +97,14 @@ public struct LNBits: Codable {
 
     
     public func handleError(data: Data) throws {
-        let decoded = try? JSONDecoder().decode(LNBitsError.self, from: data)
-        if let error = decoded {
-            throw LNBitsErr.error(error.detail)
-        }else {
-            throw LNBitsErr.error("Error in LNBits")
-        }
+        do {
+            let decoded = try JSONDecoder().decode(LNBitsError.self, from: data)
+            if let error = decoded.detail {
+                throw LNBitsErr.error(error)
+            }
+        }catch LNBitsErr.error(let error){
+            throw LNBitsErr.error(error)
+        }catch {}
     }
     
     public func payInvoice(invoice: String) async throws {
@@ -249,21 +252,34 @@ public struct LNBits: Codable {
         
         let status = try JSONDecoder().decode(Status.self, from: result.0)
 
-        if status.status ?? "Error" != "OK" {
-            throw LNBitsErr.error(try JSONDecoder().decode(Status.self, from: result.0).detail ?? "LNBits Error: Error while withdraw")
-        }
-            
-        
+        try handleError(data: result.0)
     }
+    
+    func deleteLNURLPay(id: String) async throws {
+        let request = getRequest(for: .lnurlp, method: .delete, urlExtention: id, admin: true)
+        let result = try await URLSession.shared.data(for: request)
+        try handleError(data: result.0)
+    }
+    
+    func deleteLNURLWithdraw(id: String) async throws {
+        let request = getRequest(for: .lnurlw, method: .delete, urlExtention: id, admin: true)
+        let result = try await URLSession.shared.data(for: request)
+        try handleError(data: result.0)
+    }
+    
+    
     
     
     
     
 }
 
+// --------------------------------- Models ------------------------------------
+
 struct Status: Codable {
     let status: String?
     let detail: String?
+    let success: String?
 }
 
 public struct LNURLWithdraw: Codable {
@@ -427,7 +443,7 @@ public struct Invoice: Codable, Hashable, Equatable {
 }
 
 public struct LNBitsError: Codable {
-    let detail: String
+    let detail: String?
 }
 
 public struct CheckPaid: Codable {
