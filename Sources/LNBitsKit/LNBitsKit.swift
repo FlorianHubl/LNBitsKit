@@ -22,6 +22,7 @@ public struct LNBits: Codable {
         case lnurl = "/lnurlp"
         case lnurlScan = "/api/v1/lnurlscan"
         case paylnurlp = "/api/v1/payments/lnurl"
+        case lnurlw = "/withdraw/api/v1/links"
     }
 
     enum HTTPMethod: String {
@@ -92,17 +93,14 @@ public struct LNBits: Codable {
         }
     }
     
-    public struct LNBitsErr: Error {
-        public let errorDescription: String
-    }
 
     
     public func handleError(data: Data) throws {
         let decoded = try? JSONDecoder().decode(LNBitsError.self, from: data)
         if let error = decoded {
-            throw LNBitsErr(errorDescription: error.detail)
+            throw LNBitsErr.error(error.detail)
         }else {
-            throw LNBitsErr(errorDescription: "Error in LNBits")
+            throw LNBitsErr.error("Error in LNBits")
         }
     }
     
@@ -142,7 +140,7 @@ public struct LNBits: Codable {
     }
     
     private func getRequest(for i: LNBitsRequest, method: HTTPMethod, urlExtention: String? = nil, payLoad: String? = nil, admin: Bool = false) -> URLRequest {
-        var request = URLRequest(url: URL(string: "\(server)\(i.rawValue)/\(urlExtention ?? "")")!)
+        var request = URLRequest(url: URL(string: "\(server)\(i.rawValue)\(urlExtention != nil ? "/" : "")\(urlExtention ?? "")")!)
         print(request.url!.absoluteString)
         request.httpMethod = method.rawValue
         if let payLoad = payLoad {
@@ -163,7 +161,7 @@ public struct LNBits: Codable {
     // LNURLPay
     
     public func createLNURLPayLink(name: String? = nil, standardAmount: Int? = nil, min: Int? = nil, max: Int? = nil, commentChars: Int? = nil) async throws -> LNURLPayLink {
-        var request = getRequest(for: .lnurlp, method: .post, payLoad: "{\"description\": \"\(name ?? "")\", \"amount\": \(standardAmount ?? 1), \"max\": \(max ?? 100000000), \"min\": \(min ?? 1), \"comment_chars\": \(commentChars ?? 100)}")
+        let request = getRequest(for: .lnurlp, method: .post, payLoad: "{\"description\": \"\(name ?? "")\", \"amount\": \(standardAmount ?? 1), \"max\": \(max ?? 100000000), \"min\": \(min ?? 1), \"comment_chars\": \(commentChars ?? 100)}")
         let a = try await URLSession.shared.data(for: request)
         let lnurl = try JSONDecoder().decode(LNURLPayLink.self, from: a.0)
         return lnurl
@@ -178,7 +176,7 @@ public struct LNBits: Codable {
     
     // Decode LNURL
     
-    func decodeLNURL(_ lnurl: String) async throws -> DecodedLNURL {
+    func decodeLNURL(lnurl: String) async throws -> DecodedLNURL {
         
         let request = getRequest(for: .lnurlScan, method: .get, urlExtention: lnurl)
         
@@ -203,13 +201,13 @@ public struct LNBits: Codable {
     
     // Pay LNURL Pay Link
     
-    func payLNURL(_ lnurl: String, amount: Int) async throws {
-        let decoded = try await decodeLNURL(lnurl)
+    func payLNURL(lnurl: String, amount: Int) async throws {
+        let decoded = try await decodeLNURL(lnurl: lnurl)
         print(decoded)
         print(decoded.callback!)
         print(decoded.descriptionHash!)
-        guard decoded.kind == .pay else {throw LNBitsErr.init(errorDescription: "LNBits Error: LNURL is not a Pay Link")}
-        var request = getRequest(for: .paylnurlp, method: .post, payLoad: "{\"description_hash\": \"\(decoded.descriptionHash!)\", \"callback\": \"\(decoded.callback!)\", \"amount\": \(amount * 1000), \"comment\": \"\", \"description\": \"\"}", admin: true)
+        guard decoded.kind == .pay else {throw LNBitsErr.error("LNBits Error: LNURL is not a Pay Link")}
+        let request = getRequest(for: .paylnurlp, method: .post, payLoad: "{\"description_hash\": \"\(decoded.descriptionHash!)\", \"callback\": \"\(decoded.callback!)\", \"amount\": \(amount * 1000), \"comment\": \"\", \"description\": \"\"}", admin: true)
         _ = try await URLSession.shared.data(for: request)
     }
     
@@ -219,24 +217,81 @@ public struct LNBits: Codable {
     
     // Create LNURL
     
-    func createLNURLWithdraw() {
-        
+    func createLNURLWithdraw(title: String = "Withdraw", min: Int = 1, max: Int = 100000000, uses: Int = 1, waitTime: Int = 1) async throws -> LNURLWithdraw {
+        let request = getRequest(for: .lnurlw, method: .post, payLoad: "{\"title\": \"\(title)\", \"min_withdrawable\": \(min), \"max_withdrawable\": \(max), \"uses\": \(uses), \"wait_time\": \(waitTime), \"is_unique\": false, \"webhook_url\": \"\"}", admin: true)
+        let lnurl = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode(LNURLWithdraw.self, from: lnurl.0)
     }
     
     // List LNURLW
     
-    func listLNURLWithdraw() {
-        
+    func getLNURLWithdraws() async throws -> [LNURLWithdraw] {
+        let request = getRequest(for: .lnurlw, method: .get, admin: true)
+        let lnurl = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode([LNURLWithdraw].self, from: lnurl.0)
     }
     
     // Withdraw LNURL Withdraw Link
     
-    func withdrawLNURLWithdraw() {
+    func withdrawFromLNURLWithdraw(lnurl: String, amount: Int? = nil, memo: String? = "") async throws {
+        let ln = try await decodeLNURL(lnurl: lnurl)
+        guard ln.kind == .withdraw else {throw LNBitsErr.error("LNBits Error: LNURL is not a withdraw link")}
+        
+        let invoice = try await createInvoice(sats: amount ?? ln.max!, memo: memo)
+        
+        let lnurlBackURL = ln.callback! + "&pr=" + invoice.paymentRequest
+        
+        var request = URLRequest(url: URL(string: lnurlBackURL)!)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let result = try await URLSession.shared.data(for: request)
+        
+        let status = try JSONDecoder().decode(Status.self, from: result.0)
+
+        if status.status ?? "Error" != "OK" {
+            throw LNBitsErr.error(try JSONDecoder().decode(Status.self, from: result.0).detail ?? "LNBits Error: Error while withdraw")
+        }
+            
         
     }
     
     
     
+    
+}
+
+struct Status: Codable {
+    let status: String?
+    let detail: String?
+}
+
+public struct LNURLWithdraw: Codable {
+    
+    let id, wallet, title: String
+    let minWithdrawable, maxWithdrawable, uses, waitTime: Int
+    let isUnique: Bool
+    let uniqueHash, k1: String
+    let openTime, used: Int
+    let usescsv: String
+    let number: Int
+    let webhookURL: String
+    let lnurl: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, wallet, title
+        case minWithdrawable = "min_withdrawable"
+        case maxWithdrawable = "max_withdrawable"
+        case uses
+        case waitTime = "wait_time"
+        case isUnique = "is_unique"
+        case uniqueHash = "unique_hash"
+        case k1
+        case openTime = "open_time"
+        case used, usescsv, number
+        case webhookURL = "webhook_url"
+        case lnurl
+    }
 }
 
 public struct DecodedLNURLP: Codable {
@@ -505,6 +560,10 @@ public struct LNBitsTransaction: Codable {
     let bolt11, preimage, payment_hash: String
     let expiry: Int
     let wallet_id: String
+}
+
+public enum LNBitsErr: Error {
+    case error(String)
 }
 
 

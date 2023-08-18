@@ -104,7 +104,7 @@ let links = lnurls.map { lnurl in
 ### Decode LNURL
 
 ```swift
-let lnurl = try await lnbits.decodeLNURL("LNURLBITCOINISAWESOME")
+let lnurl = try await lnbits.decodeLNURL(lnurl: "LNURLBITCOINISAWESOME")
 switch lnurl.kind {
     case .pay:
     // LNURL Pay
@@ -115,10 +115,42 @@ switch lnurl.kind {
 }
 ```
 
-### Pay LNURL Link
+### Pay LNURL Pay Link
 ```swift
-try await lnbits.payLNURL("LNURLBITCOINISAWESOME", amount: 21)
+try await lnbits.payLNURL(lnurl: "LNURLBITCOINISAWESOME", amount: 21)
 ```
 
-### Working on: LNURL Withdraw and LNURL Auth.
+### Create LNURL Withdraw
+```swift
+let lnurl = try await lnbits.createLNURLWithdraw()
+let link = lnurl.lnurl
+```
+
+### List LNURL Withdraw
+```swift
+let lnurl = try await lnbits.getLNURLWithdraws()
+let a = lnurl.map { i in
+    i.lnurl
+}
+```
+
+### Withdraw from LNURL Withdraw Link
+```swift
+try! await lnbits.withdrawFromLNURLWithdraw(lnurl: "LNURLBITCOINISAWESOME")
+```
+
+This function automaticlly withdraws the highest amount possible. 
+But you can also set an amount.
+
+```swift
+try! await lnbits.withdrawFromLNURLWithdraw(lnurl: "LNURLBITCOINISAWESOME", amount: 21)
+```
+
+
+
+
+### Working on: Delete LNURL Link and LNURL Auth.
+
+
+
 
