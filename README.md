@@ -170,4 +170,44 @@ try await lnbits.deleteLNURLWithdraw(id: "BTC21M")
 try await lnbits.lnurlAuth(lnurl: "LNURLLOGINWITHLIGHTNING")
 ```
 
-### Working on: Boltz
+### Error Handling
+
+```swift
+do {
+// Code
+}catch LNBitsError.error(let error) {
+    print(error)
+}
+```
+
+### Boltz Sub Marine Swap
+
+```swift
+let swap = await try lnbits.createSubMarineSwap(amount: 100000, refundAddress: "bc1qbitcoinfixesthis")
+```
+
+Min 50000 sats per Swap.
+
+### List Boltz Sub Marine Swaps
+
+```swift
+let swaps = await try lnbits.getSubMarineSwaps()
+```
+
+### Refund Boltz Sub Marine Swap
+
+```swift
+await try lnbits.refundSubMarineSwap(swapID: "mySwapID")
+```
+
+### Boltz Reverse Sub Marine Swap
+
+```swift
+let swap = await try lnbitscreateReversedSubMarineSwap(amount: 100000, onChainAddress: "bc1qbitcoinfixesthis")
+```
+
+### List Reverse Sub Marine Swap
+
+```swift
+let swap = await try lnbits.getReversedSubMarineSwaps()
+```

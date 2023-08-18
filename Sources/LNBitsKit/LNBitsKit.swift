@@ -11,6 +11,7 @@ import Foundation
 public struct LNBits: Codable {
     
     let server: String
+    let walletID: String
     let adminKey: String
     let invoiceKey: String
     
@@ -23,6 +24,9 @@ public struct LNBits: Codable {
         case lnurlScan = "/api/v1/lnurlscan"
         case paylnurlp = "/api/v1/payments/lnurl"
         case lnurlw = "/withdraw/api/v1/links"
+        case boltzsms = "/boltz/api/v1/swap"
+        case boltzsmsr = "/boltz/api/v1/swap/refund"
+        case boltzrsms = "/boltz/api/v1/swap/reverse"
     }
 
     enum HTTPMethod: String {
@@ -32,8 +36,9 @@ public struct LNBits: Codable {
         case delete = "DELETE"
     }
     
-    public init(server: String, adminKey: String, invoiceKey: String) {
+    public init(server: String, walletID: String, adminKey: String, invoiceKey: String) {
         self.server = server
+        self.walletID = walletID
         self.adminKey = adminKey
         self.invoiceKey = invoiceKey
     }
@@ -281,9 +286,133 @@ public struct LNBits: Codable {
         
         try handleError(data: result.0)
     }
+    
+    // Boltz
+    
+    // Bitcoin --> Lightning
+    
+    func createSubMarineSwap(amount: Int, refundAddress: String) async throws -> BoltzSubMarineSwap {
+        let request = getRequest(for: .boltzsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"refund_address\": \"\(refundAddress)\",\"amount\": \"\(amount)\",\"feerate\": false}", admin: true)
+        
+        let result = try await URLSession.shared.data(for: request)
+        result.0.print()
+        try handleError(data: result.0)
+        let swap = try JSONDecoder().decode(BoltzSubMarineSwap.self, from: result.0)
+        return swap
+    }
+    
+    func getSubMarineSwaps() async throws -> [BoltzSubMarineSwap] {
+        let request = getRequest(for: .boltzsms, method: .get)
+        let result = try await URLSession.shared.data(for: request)
+        try handleError(data: result.0)
+        return try JSONDecoder().decode([BoltzSubMarineSwap].self, from: result.0)
+    }
+    
+    // Lightning --> Bitcoin
+    
+    func createReversedSubMarineSwap(amount: Int, onChainAddress: String) async throws -> BoltzReversedSubMarineSwap {
+        let request = getRequest(for: .boltzrsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"amount\": \"\(amount)\",\"instant_settlement\": true,\"onchain_address\": \"\(onChainAddress)\"}", admin: true)
+        let result = try await URLSession.shared.data(for: request)
+        try handleError(data: result.0)
+        return try JSONDecoder().decode(BoltzReversedSubMarineSwap.self, from: result.0)
+    }
+    
+    func getReversedSubMarineSwaps() async throws -> [BoltzReversedSubMarineSwap] {
+        let request = getRequest(for: .boltzrsms, method: .get)
+        let result = try await URLSession.shared.data(for: request)
+        try handleError(data: result.0)
+        return try JSONDecoder().decode([BoltzReversedSubMarineSwap].self, from: result.0)
+    }
+    
+    func refundSubMarineSwap(swapID: String) async throws -> RefundSubMarineSwap {
+        let request = getRequest(for: .boltzsmsr, method: .post, payLoad: "{\"swap_id\": \"\(swapID)\"}", admin: true)
+        let result = try await URLSession.shared.data(for: request)
+        try handleError(data: result.0)
+        return try JSONDecoder().decode(RefundSubMarineSwap.self, from: result.0)
+    }
+    
 }
 
+
+
 // --------------------------------- Models ------------------------------------
+
+struct RefundSubMarineSwap: Codable {
+    let id, wallet: String
+    let amount: Int
+    let feerate: Bool
+    let feerateValue: Int
+    let paymentHash: String
+    let time: Int
+    let status, refundPrivkey, refundAddress, boltzID: String
+    let expectedAmount, timeoutBlockHeight: Int
+    let address, bip21, redeemScript: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, wallet, amount, feerate
+        case feerateValue = "feerate_value"
+        case paymentHash = "payment_hash"
+        case time, status
+        case refundPrivkey = "refund_privkey"
+        case refundAddress = "refund_address"
+        case boltzID = "boltz_id"
+        case expectedAmount = "expected_amount"
+        case timeoutBlockHeight = "timeout_block_height"
+        case address, bip21
+        case redeemScript = "redeem_script"
+    }
+}
+
+
+struct BoltzReversedSubMarineSwap: Codable {
+    let id, wallet: String
+    let amount: Int
+    let onchainAddress: String
+    let instantSettlement: Bool
+    let time: Int
+    let status, boltzID, preimage, claimPrivkey: String
+    let lockupAddress, invoice: String
+    let onchainAmount, timeoutBlockHeight: Int
+    let redeemScript: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, wallet, amount
+        case onchainAddress = "onchain_address"
+        case instantSettlement = "instant_settlement"
+        case time, status
+        case boltzID = "boltz_id"
+        case preimage
+        case claimPrivkey = "claim_privkey"
+        case lockupAddress = "lockup_address"
+        case invoice
+        case onchainAmount = "onchain_amount"
+        case timeoutBlockHeight = "timeout_block_height"
+        case redeemScript = "redeem_script"
+    }
+}
+
+struct BoltzSubMarineSwap: Codable {
+    let id, wallet: String
+    let amount: Int
+    let paymentHash: String
+    let time: Int
+    let status, refundPrivkey, refundAddress, boltzID: String
+    let expectedAmount, timeoutBlockHeight: Int
+    let address, bip21, redeemScript: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, wallet, amount
+        case paymentHash = "payment_hash"
+        case time, status
+        case refundPrivkey = "refund_privkey"
+        case refundAddress = "refund_address"
+        case boltzID = "boltz_id"
+        case expectedAmount = "expected_amount"
+        case timeoutBlockHeight = "timeout_block_height"
+        case address, bip21
+        case redeemScript = "redeem_script"
+    }
+}
 
 struct Status: Codable {
     let status: String?

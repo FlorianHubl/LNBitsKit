@@ -4,10 +4,11 @@ import XCTest
 final class LNBitsKitTests: XCTestCase {
     func test() async throws {
         if #available(iOS 13.0.0, *) {
-            let lnbits = LNBits(server: "https://legend.lnbits.com", adminKey: "83da52da85644e5d9c67cb0dc82aca00", invoiceKey: "c5ad8da7193140a5bc95012f349fd852")
+            let lnbits = LNBits(server: "https://legend.lnbits.com", walletID: "45d1fcbb480f4c4eb670a27aa1ce08a9", adminKey: "a8700717f9f14b58ac07595734c139bf", invoiceKey: "948352def9e1483d9f8719c2f6a1fb87")
             
-            print("Done")
-            try await lnbits.lnurlAuth(lnurl: "LNURL1DP68GURN8GHJ7MRFVA58GMNFDENKCMM8D9HZUMRFWEJJ7MR0VA5KU0MTXY7NZCN9VVENZWPSVSERWWF5VCEXYEP3XS6XYDF3X5MR2DMYXQMXXCF3V43RJDM9VYUNQVP3X43RGWF3XQMNWDMPVDSKYVP4XPJRXWFKVCN8GCT884KX7EMFDCKLCFWU")
+            let swap = try await lnbits.getSubMarineSwaps()
+            
+            print(swap)
             
             // Check connection
                     
