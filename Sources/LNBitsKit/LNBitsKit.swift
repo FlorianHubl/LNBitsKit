@@ -20,6 +20,7 @@ extension SwiftTor: RequestType {
     
 }
 
+@available(iOS 13.0, *)
 protocol RequestType {
     func request(request: URLRequest) async throws -> (Data, URLResponse)
 }
