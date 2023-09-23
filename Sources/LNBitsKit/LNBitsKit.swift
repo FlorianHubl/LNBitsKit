@@ -56,10 +56,17 @@ public struct LNBits {
     
     let requestType: RequestType
     
-    public init(server: String, adminKey: String, walletID: String) {
+    public var connection = false
+    
+    public init(server: String, adminKey: String, walletID: String, tor: SwiftTor? = nil) {
         if server.suffix(6) == ".onion" {
-            self.requestType = SwiftTor()
+            if let tor = tor {
+                self.requestType = tor
+            }else {
+                self.requestType = SwiftTor()
+            }
         }else {
+            self.connection = true
             self.requestType = ClearnetRequest()
         }
         self.server = server
