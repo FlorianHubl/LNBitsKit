@@ -611,7 +611,7 @@ public struct Invoice: Codable, Hashable, Equatable {
         case checkingID = "checking_id"
     }
     
-    static let demo = Invoice(paymentHash: "", paymentRequest: "", checkingID: "")
+    public static let demo = Invoice(paymentHash: "", paymentRequest: "", checkingID: "")
 }
 
 public struct LNBitsError: Codable {
@@ -632,21 +632,6 @@ struct InvoicePaid: Codable {
     }
 }
 
-struct InvoiceUI: Hashable, Equatable {
-    public let invoice: Invoice
-    public let sats: Int
-    
-    static let demo = InvoiceUI(invoice: .demo, sats: 11)
-}
-
-
-struct DecodedInvoiceUI: Codable, Hashable {
-    public let decoded: DecodedInvoice
-    public let bolt11: String
-    
-    static let demo = DecodedInvoiceUI(decoded: .demo, bolt11: "")
-}
-
 public struct DecodedInvoice: Codable, Hashable {
     static public func == (lhs: DecodedInvoice, rhs: DecodedInvoice) -> Bool {
         lhs.paymentHash == rhs.paymentHash
@@ -657,7 +642,7 @@ public struct DecodedInvoice: Codable, Hashable {
     }
     
         
-        static let demo = DecodedInvoice(paymentHash: "", amountMsat: 1, description: "", descriptionHash: nil, payee: "", date: 1, expiry: 1, secret: "", routeHints: [], minFinalCltvExpiry: 1)
+        public static let demo = DecodedInvoice(paymentHash: "", amountMsat: 1, description: "", descriptionHash: nil, payee: "", date: 1, expiry: 1, secret: "", routeHints: [], minFinalCltvExpiry: 1)
         
     public let paymentHash: String
     public let amountMsat: Int
