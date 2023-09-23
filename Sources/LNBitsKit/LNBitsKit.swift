@@ -722,15 +722,15 @@ public class JSONNull: Codable, Hashable {
     }
 
 public struct LNBitsTransaction: Codable {
-    let checking_id: String
-    let pending: Bool
-    var amount: Int
-    let fee: Int
-    let memo: String
-    let time: Int
-    let bolt11, preimage, payment_hash: String
-    let expiry: Int
-    let wallet_id: String
+    public let checking_id: String
+    public let pending: Bool
+    public var amount: Int
+    public let fee: Int
+    public let memo: String
+    public let time: Int
+    public let bolt11, preimage, payment_hash: String
+    public let expiry: Int
+    public let wallet_id: String
 }
 
 public enum LNBitsErr: Error {
