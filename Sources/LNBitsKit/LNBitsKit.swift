@@ -6,14 +6,31 @@
 //
 
 import Foundation
+import SwiftTor
+
+@available(iOS 13.0, *)
+struct ClearnetRequest: RequestType {
+    func request(request: URLRequest) async throws -> (Data, URLResponse) {
+        return try await URLSession.shared.data(for: request)
+    }
+}
+
+@available(iOS 13.0, *)
+extension SwiftTor: RequestType {
+    
+}
+
+protocol RequestType {
+    func request(request: URLRequest) async throws -> (Data, URLResponse)
+}
 
 @available(iOS 13.0.0, macOS 12.0.0,  *)
-public struct LNBits: Codable {
+public struct LNBits {
     
     let server: String
-    let walletID: String
+//    let walletID: String
     let adminKey: String
-    let invoiceKey: String
+//    let invoiceKey: String
     
     enum LNBitsRequest: String {
         case balance = "/api/v1/wallet"
@@ -36,11 +53,18 @@ public struct LNBits: Codable {
         case delete = "DELETE"
     }
     
+    let requestType: RequestType
+    
     public init(server: String, walletID: String, adminKey: String, invoiceKey: String) {
+        if server.prefix(6) == ".onion" {
+            self.requestType = SwiftTor()
+        }else {
+            self.requestType = ClearnetRequest()
+        }
         self.server = server
-        self.walletID = walletID
+//        self.walletID = walletID
         self.adminKey = adminKey
-        self.invoiceKey = invoiceKey
+//        self.invoiceKey = invoiceKey
     }
     
     public func testConnection() async -> Bool {
@@ -53,43 +77,43 @@ public struct LNBits: Codable {
     }
     
     public func getBalance() async throws -> Int {
-        let a = try await URLSession.shared.data(for: getRequest(for: .balance, method: .get))
+        let a = try await requestType.request(request: getRequest(for: .balance, method: .get))
         return try JSONDecoder().decode(Balance.self, from: a.0).balance / 1000
     }
     
     public func createInvoice(sats: Int, memo: String? = nil) async throws -> Invoice {
         let a = getRequest(for: .invoice, method: .post, payLoad: "{\"out\": false, \"amount\": \(sats), \"memo\": \"\(memo ?? "")\"}")
-        let c = try await URLSession.shared.data(for: a)
+        let c = try await requestType.request(request: a)
         return try JSONDecoder().decode(Invoice.self, from: c.0)
     }
     
     public func checkIfPaid(invoice: Invoice) async throws -> Bool {
         let a = getRequest(for: .invoice, method: .get, urlExtention: invoice.paymentHash)
-        let b = try await URLSession.shared.data(for: a)
+        let b = try await requestType.request(request: a)
         let c = try JSONDecoder().decode(CheckPaid.self, from: b.0)
         return c.paid
     }
     
     public func getName() async throws -> String {
-        let a = try await URLSession.shared.data(for: getRequest(for: .balance, method: .get))
+        let a = try await requestType.request(request: getRequest(for: .balance, method: .get))
         return try JSONDecoder().decode(Balance.self, from: a.0).name
     }
     
     public func getBalanceName() async throws -> (Int, String) {
-        let a = try await URLSession.shared.data(for: getRequest(for: .balance, method: .get))
+        let a = try await requestType.request(request: getRequest(for: .balance, method: .get))
         let i = try JSONDecoder().decode(Balance.self, from: a.0)
         return (i.balance / 1000, i.name)
     }
     
     public func changeName(newName: String) async throws {
         let request = getRequest(for: .balance, method: .put, urlExtention: newName, admin: true)
-        let a = try await URLSession.shared.data(for: request)
+        let a = try await requestType.request(request: request)
         print(String(data: a.0, encoding: .utf8)!)
     }
     
     public func decodeInvoice(invoice: String) async throws -> DecodedInvoice {
         let request = getRequest(for: .payments, method: .post, payLoad: "{\"data\": \"\(invoice)\"}")
-        let a = try await URLSession.shared.data(for: request)
+        let a = try await requestType.request(request: request)
         do {
             let decoded = try JSONDecoder().decode(DecodedInvoice.self, from: a.0)
             return decoded
@@ -114,7 +138,7 @@ public struct LNBits: Codable {
     
     public func payInvoice(invoice: String) async throws {
         let request = getRequest(for: .invoice, method: .post, payLoad: "{\"out\": true, \"bolt11\": \"\(invoice)\"}", admin: true)
-        let a = try await URLSession.shared.data(for: request)
+        let a = try await requestType.request(request: request)
         do {
             _ = try JSONDecoder().decode(InvoicePaid.self, from: a.0)
         }catch {
@@ -127,7 +151,7 @@ public struct LNBits: Codable {
     
     public func getTXs() async throws -> [LNBitsTransaction] {
         let request = getRequest(for: .invoice, method: .get)
-        let a = try await URLSession.shared.data(for: request)
+        let a = try await requestType.request(request: request)
         do {
             var txs = try JSONDecoder().decode([LNBitsTransaction].self, from: a.0)
             
@@ -154,7 +178,7 @@ public struct LNBits: Codable {
         if let payLoad = payLoad {
             request = add(payload: payLoad, request)
         }
-        request.addValue(admin ? adminKey : invoiceKey, forHTTPHeaderField: "X-Api-Key")
+        request.addValue(adminKey, forHTTPHeaderField: "X-Api-Key")
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         return request
     }
@@ -170,14 +194,14 @@ public struct LNBits: Codable {
     
     public func createLNURLPayLink(name: String? = nil, standardAmount: Int? = nil, min: Int? = nil, max: Int? = nil, commentChars: Int? = nil) async throws -> LNURLPayLink {
         let request = getRequest(for: .lnurlp, method: .post, payLoad: "{\"description\": \"\(name ?? "")\", \"amount\": \(standardAmount ?? 1), \"max\": \(max ?? 100000000), \"min\": \(min ?? 1), \"comment_chars\": \(commentChars ?? 100)}")
-        let a = try await URLSession.shared.data(for: request)
+        let a = try await requestType.request(request: request)
         let lnurl = try JSONDecoder().decode(LNURLPayLink.self, from: a.0)
         return lnurl
     }
     
     public func getPayLinks() async throws -> LNURLPayLinks {
         let request = getRequest(for: .lnurlp, method: .get, urlExtention: "")
-        let a = try await URLSession.shared.data(for: request)
+        let a = try await requestType.request(request: request)
         let list = try JSONDecoder().decode(LNURLPayLinks.self, from: a.0)
         return list
     }
@@ -188,7 +212,7 @@ public struct LNBits: Codable {
         
         let request = getRequest(for: .lnurlScan, method: .get, urlExtention: lnurl)
         
-        let a = try await URLSession.shared.data(for: request)
+        let a = try await requestType.request(request: request)
         
         a.0.print()
         
@@ -216,7 +240,7 @@ public struct LNBits: Codable {
         print(decoded.descriptionHash!)
         guard decoded.kind == .pay else {throw LNBitsErr.error("LNBits Error: LNURL is not a Pay Link")}
         let request = getRequest(for: .paylnurlp, method: .post, payLoad: "{\"description_hash\": \"\(decoded.descriptionHash!)\", \"callback\": \"\(decoded.callback!)\", \"amount\": \(amount * 1000), \"comment\": \"\", \"description\": \"\"}", admin: true)
-        _ = try await URLSession.shared.data(for: request)
+        _ = try await requestType.request(request: request)
     }
     
     struct DecodedLNURLType: Codable {
@@ -227,7 +251,7 @@ public struct LNBits: Codable {
     
     func createLNURLWithdraw(title: String = "Withdraw", min: Int = 1, max: Int = 100000000, uses: Int = 1, waitTime: Int = 1) async throws -> LNURLWithdraw {
         let request = getRequest(for: .lnurlw, method: .post, payLoad: "{\"title\": \"\(title)\", \"min_withdrawable\": \(min), \"max_withdrawable\": \(max), \"uses\": \(uses), \"wait_time\": \(waitTime), \"is_unique\": false, \"webhook_url\": \"\"}", admin: true)
-        let lnurl = try await URLSession.shared.data(for: request)
+        let lnurl = try await requestType.request(request: request)
         return try JSONDecoder().decode(LNURLWithdraw.self, from: lnurl.0)
     }
     
@@ -235,7 +259,7 @@ public struct LNBits: Codable {
     
     func getLNURLWithdraws() async throws -> [LNURLWithdraw] {
         let request = getRequest(for: .lnurlw, method: .get, admin: true)
-        let lnurl = try await URLSession.shared.data(for: request)
+        let lnurl = try await requestType.request(request: request)
         return try JSONDecoder().decode([LNURLWithdraw].self, from: lnurl.0)
     }
     
@@ -250,24 +274,24 @@ public struct LNBits: Codable {
         let lnurlBackURL = ln.callback! + "&pr=" + invoice.paymentRequest
         
         var request = URLRequest(url: URL(string: lnurlBackURL)!)
-        request.addValue(invoiceKey, forHTTPHeaderField: "X-Api-Key")
+        request.addValue(adminKey, forHTTPHeaderField: "X-Api-Key")
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let result = try await URLSession.shared.data(for: request)
+        let result = try await requestType.request(request: request)
 
         try handleError(data: result.0)
     }
     
     func deleteLNURLPay(id: String) async throws {
         let request = getRequest(for: .lnurlp, method: .delete, urlExtention: id, admin: true)
-        let result = try await URLSession.shared.data(for: request)
+        let result = try await requestType.request(request: request)
         try handleError(data: result.0)
     }
     
     func deleteLNURLWithdraw(id: String) async throws {
         let request = getRequest(for: .lnurlw, method: .delete, urlExtention: id, admin: true)
-        let result = try await URLSession.shared.data(for: request)
+        let result = try await requestType.request(request: request)
         try handleError(data: result.0)
     }
     
@@ -282,7 +306,7 @@ public struct LNBits: Codable {
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = "{\"callback\": \"\(ln.callback!)\"}".data(using: .utf8)
         
-        let result = try await URLSession.shared.data(for: request)
+        let result = try await requestType.request(request: request)
         
         try handleError(data: result.0)
     }
@@ -291,45 +315,45 @@ public struct LNBits: Codable {
     
     // Bitcoin --> Lightning
     
-    func createSubMarineSwap(amount: Int, refundAddress: String) async throws -> BoltzSubMarineSwap {
-        let request = getRequest(for: .boltzsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"refund_address\": \"\(refundAddress)\",\"amount\": \"\(amount)\",\"feerate\": false}", admin: true)
-        
-        let result = try await URLSession.shared.data(for: request)
-        result.0.print()
-        try handleError(data: result.0)
-        let swap = try JSONDecoder().decode(BoltzSubMarineSwap.self, from: result.0)
-        return swap
-    }
-    
-    func getSubMarineSwaps() async throws -> [BoltzSubMarineSwap] {
-        let request = getRequest(for: .boltzsms, method: .get)
-        let result = try await URLSession.shared.data(for: request)
-        try handleError(data: result.0)
-        return try JSONDecoder().decode([BoltzSubMarineSwap].self, from: result.0)
-    }
-    
-    // Lightning --> Bitcoin
-    
-    func createReversedSubMarineSwap(amount: Int, onChainAddress: String) async throws -> BoltzReversedSubMarineSwap {
-        let request = getRequest(for: .boltzrsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"amount\": \"\(amount)\",\"instant_settlement\": true,\"onchain_address\": \"\(onChainAddress)\"}", admin: true)
-        let result = try await URLSession.shared.data(for: request)
-        try handleError(data: result.0)
-        return try JSONDecoder().decode(BoltzReversedSubMarineSwap.self, from: result.0)
-    }
-    
-    func getReversedSubMarineSwaps() async throws -> [BoltzReversedSubMarineSwap] {
-        let request = getRequest(for: .boltzrsms, method: .get)
-        let result = try await URLSession.shared.data(for: request)
-        try handleError(data: result.0)
-        return try JSONDecoder().decode([BoltzReversedSubMarineSwap].self, from: result.0)
-    }
-    
-    func refundSubMarineSwap(swapID: String) async throws -> RefundSubMarineSwap {
-        let request = getRequest(for: .boltzsmsr, method: .post, payLoad: "{\"swap_id\": \"\(swapID)\"}", admin: true)
-        let result = try await URLSession.shared.data(for: request)
-        try handleError(data: result.0)
-        return try JSONDecoder().decode(RefundSubMarineSwap.self, from: result.0)
-    }
+//    func createSubMarineSwap(amount: Int, refundAddress: String) async throws -> BoltzSubMarineSwap {
+//        let request = getRequest(for: .boltzsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"refund_address\": \"\(refundAddress)\",\"amount\": \"\(amount)\",\"feerate\": false}", admin: true)
+//
+//        let result = try await requestType.request(request: request)
+//        result.0.print()
+//        try handleError(data: result.0)
+//        let swap = try JSONDecoder().decode(BoltzSubMarineSwap.self, from: result.0)
+//        return swap
+//    }
+//
+//    func getSubMarineSwaps() async throws -> [BoltzSubMarineSwap] {
+//        let request = getRequest(for: .boltzsms, method: .get)
+//        let result = try await requestType.request(request: request)
+//        try handleError(data: result.0)
+//        return try JSONDecoder().decode([BoltzSubMarineSwap].self, from: result.0)
+//    }
+//
+//    // Lightning --> Bitcoin
+//
+//    func createReversedSubMarineSwap(amount: Int, onChainAddress: String) async throws -> BoltzReversedSubMarineSwap {
+//        let request = getRequest(for: .boltzrsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"amount\": \"\(amount)\",\"instant_settlement\": true,\"onchain_address\": \"\(onChainAddress)\"}", admin: true)
+//        let result = try await requestType.request(request: request)
+//        try handleError(data: result.0)
+//        return try JSONDecoder().decode(BoltzReversedSubMarineSwap.self, from: result.0)
+//    }
+//
+//    func getReversedSubMarineSwaps() async throws -> [BoltzReversedSubMarineSwap] {
+//        let request = getRequest(for: .boltzrsms, method: .get)
+//        let result = try await requestType.request(request: request)
+//        try handleError(data: result.0)
+//        return try JSONDecoder().decode([BoltzReversedSubMarineSwap].self, from: result.0)
+//    }
+//
+//    func refundSubMarineSwap(swapID: String) async throws -> RefundSubMarineSwap {
+//        let request = getRequest(for: .boltzsmsr, method: .post, payLoad: "{\"swap_id\": \"\(swapID)\"}", admin: true)
+//        let result = try await requestType.request(request: request)
+//        try handleError(data: result.0)
+//        return try JSONDecoder().decode(RefundSubMarineSwap.self, from: result.0)
+//    }
     
 }
 

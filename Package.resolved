@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "swifttor",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/FlorianHubl/SwiftTor",
+      "state" : {
+        "branch" : "main",
+        "revision" : "95384c58a7ecdb78e70f6fb0c28074c874fc0922"
+      }
+    }
+  ],
+  "version" : 2
+}
