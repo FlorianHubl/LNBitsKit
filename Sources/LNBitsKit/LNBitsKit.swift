@@ -28,9 +28,9 @@ protocol RequestType {
 @available(iOS 13.0.0, macOS 12.0.0,  *)
 public struct LNBits {
     
-    let server: String
-    let walletID: String
-    let adminKey: String
+    public let server: String
+    public let walletID: String
+    public let adminKey: String
 //    let invoiceKey: String
     
     enum LNBitsRequest: String {
