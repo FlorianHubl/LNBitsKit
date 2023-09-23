@@ -58,6 +58,7 @@ public struct LNBits {
     public init(server: String, adminKey: String) {
         if server.prefix(6) == ".onion" {
             self.requestType = SwiftTor()
+            print("Onion Address")
         }else {
             self.requestType = ClearnetRequest()
         }
