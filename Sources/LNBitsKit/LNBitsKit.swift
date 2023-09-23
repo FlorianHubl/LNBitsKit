@@ -29,7 +29,7 @@ protocol RequestType {
 public struct LNBits {
     
     let server: String
-//    let walletID: String
+    let walletID: String
     let adminKey: String
 //    let invoiceKey: String
     
@@ -56,16 +56,15 @@ public struct LNBits {
     
     let requestType: RequestType
     
-    public init(server: String, adminKey: String) {
+    public init(server: String, adminKey: String, walletID: String) {
         if server.suffix(6) == ".onion" {
             self.requestType = SwiftTor()
         }else {
             self.requestType = ClearnetRequest()
         }
         self.server = server
-//        self.walletID = walletID
+        self.walletID = walletID
         self.adminKey = adminKey
-//        self.invoiceKey = invoiceKey
     }
     
     public func testConnection() async -> Bool {
@@ -120,6 +119,7 @@ public struct LNBits {
             return decoded
         }catch {
             try handleError(data: a.0)
+            print("LNBitsKit: Fatal Error in decodeInvoice")
             fatalError()
         }
     }
@@ -144,6 +144,7 @@ public struct LNBits {
             _ = try JSONDecoder().decode(InvoicePaid.self, from: a.0)
         }catch {
             try handleError(data: a.0)
+            print("LNBitsKit: Fatal Error in payInvoice")
             fatalError()
         }
     }
@@ -168,6 +169,7 @@ public struct LNBits {
         }catch {
             print("err")
             try handleError(data: a.0)
+            print("LNBitsKit: Fatal Error in getTXs")
             fatalError()
         }
     }
@@ -316,45 +318,45 @@ public struct LNBits {
     
     // Bitcoin --> Lightning
     
-//    func createSubMarineSwap(amount: Int, refundAddress: String) async throws -> BoltzSubMarineSwap {
-//        let request = getRequest(for: .boltzsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"refund_address\": \"\(refundAddress)\",\"amount\": \"\(amount)\",\"feerate\": false}", admin: true)
-//
-//        let result = try await requestType.request(request: request)
-//        result.0.print()
-//        try handleError(data: result.0)
-//        let swap = try JSONDecoder().decode(BoltzSubMarineSwap.self, from: result.0)
-//        return swap
-//    }
-//
-//    func getSubMarineSwaps() async throws -> [BoltzSubMarineSwap] {
-//        let request = getRequest(for: .boltzsms, method: .get)
-//        let result = try await requestType.request(request: request)
-//        try handleError(data: result.0)
-//        return try JSONDecoder().decode([BoltzSubMarineSwap].self, from: result.0)
-//    }
-//
-//    // Lightning --> Bitcoin
-//
-//    func createReversedSubMarineSwap(amount: Int, onChainAddress: String) async throws -> BoltzReversedSubMarineSwap {
-//        let request = getRequest(for: .boltzrsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"amount\": \"\(amount)\",\"instant_settlement\": true,\"onchain_address\": \"\(onChainAddress)\"}", admin: true)
-//        let result = try await requestType.request(request: request)
-//        try handleError(data: result.0)
-//        return try JSONDecoder().decode(BoltzReversedSubMarineSwap.self, from: result.0)
-//    }
-//
-//    func getReversedSubMarineSwaps() async throws -> [BoltzReversedSubMarineSwap] {
-//        let request = getRequest(for: .boltzrsms, method: .get)
-//        let result = try await requestType.request(request: request)
-//        try handleError(data: result.0)
-//        return try JSONDecoder().decode([BoltzReversedSubMarineSwap].self, from: result.0)
-//    }
-//
-//    func refundSubMarineSwap(swapID: String) async throws -> RefundSubMarineSwap {
-//        let request = getRequest(for: .boltzsmsr, method: .post, payLoad: "{\"swap_id\": \"\(swapID)\"}", admin: true)
-//        let result = try await requestType.request(request: request)
-//        try handleError(data: result.0)
-//        return try JSONDecoder().decode(RefundSubMarineSwap.self, from: result.0)
-//    }
+    func createSubMarineSwap(amount: Int, refundAddress: String) async throws -> BoltzSubMarineSwap {
+        let request = getRequest(for: .boltzsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"refund_address\": \"\(refundAddress)\",\"amount\": \"\(amount)\",\"feerate\": false}", admin: true)
+
+        let result = try await requestType.request(request: request)
+        result.0.print()
+        try handleError(data: result.0)
+        let swap = try JSONDecoder().decode(BoltzSubMarineSwap.self, from: result.0)
+        return swap
+    }
+
+    func getSubMarineSwaps() async throws -> [BoltzSubMarineSwap] {
+        let request = getRequest(for: .boltzsms, method: .get)
+        let result = try await requestType.request(request: request)
+        try handleError(data: result.0)
+        return try JSONDecoder().decode([BoltzSubMarineSwap].self, from: result.0)
+    }
+
+    // Lightning --> Bitcoin
+
+    func createReversedSubMarineSwap(amount: Int, onChainAddress: String) async throws -> BoltzReversedSubMarineSwap {
+        let request = getRequest(for: .boltzrsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"amount\": \"\(amount)\",\"instant_settlement\": true,\"onchain_address\": \"\(onChainAddress)\"}", admin: true)
+        let result = try await requestType.request(request: request)
+        try handleError(data: result.0)
+        return try JSONDecoder().decode(BoltzReversedSubMarineSwap.self, from: result.0)
+    }
+
+    func getReversedSubMarineSwaps() async throws -> [BoltzReversedSubMarineSwap] {
+        let request = getRequest(for: .boltzrsms, method: .get)
+        let result = try await requestType.request(request: request)
+        try handleError(data: result.0)
+        return try JSONDecoder().decode([BoltzReversedSubMarineSwap].self, from: result.0)
+    }
+
+    func refundSubMarineSwap(swapID: String) async throws -> RefundSubMarineSwap {
+        let request = getRequest(for: .boltzsmsr, method: .post, payLoad: "{\"swap_id\": \"\(swapID)\"}", admin: true)
+        let result = try await requestType.request(request: request)
+        try handleError(data: result.0)
+        return try JSONDecoder().decode(RefundSubMarineSwap.self, from: result.0)
+    }
     
 }
 
