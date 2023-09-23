@@ -55,7 +55,7 @@ public struct LNBits {
     
     let requestType: RequestType
     
-    public init(server: String, walletID: String, adminKey: String, invoiceKey: String) {
+    public init(server: String, adminKey: String) {
         if server.prefix(6) == ".onion" {
             self.requestType = SwiftTor()
         }else {
