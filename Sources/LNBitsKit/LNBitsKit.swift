@@ -362,15 +362,15 @@ public struct LNBits {
 // --------------------------------- Models ------------------------------------
 
 struct RefundSubMarineSwap: Codable {
-    let id, wallet: String
-    let amount: Int
-    let feerate: Bool
-    let feerateValue: Int
-    let paymentHash: String
-    let time: Int
-    let status, refundPrivkey, refundAddress, boltzID: String
-    let expectedAmount, timeoutBlockHeight: Int
-    let address, bip21, redeemScript: String
+    public let id, wallet: String
+    public let amount: Int
+    public let feerate: Bool
+    public let feerateValue: Int
+    public let paymentHash: String
+    public let time: Int
+    public let status, refundPrivkey, refundAddress, boltzID: String
+    public let expectedAmount, timeoutBlockHeight: Int
+    public let address, bip21, redeemScript: String
 
     enum CodingKeys: String, CodingKey {
         case id, wallet, amount, feerate
@@ -389,15 +389,15 @@ struct RefundSubMarineSwap: Codable {
 
 
 struct BoltzReversedSubMarineSwap: Codable {
-    let id, wallet: String
-    let amount: Int
-    let onchainAddress: String
-    let instantSettlement: Bool
-    let time: Int
-    let status, boltzID, preimage, claimPrivkey: String
-    let lockupAddress, invoice: String
-    let onchainAmount, timeoutBlockHeight: Int
-    let redeemScript: String
+    public let id, wallet: String
+    public let amount: Int
+    public let onchainAddress: String
+    public let instantSettlement: Bool
+    public let time: Int
+    public let status, boltzID, preimage, claimPrivkey: String
+    public let lockupAddress, invoice: String
+    public let onchainAmount, timeoutBlockHeight: Int
+    public let redeemScript: String
 
     enum CodingKeys: String, CodingKey {
         case id, wallet, amount
@@ -416,13 +416,13 @@ struct BoltzReversedSubMarineSwap: Codable {
 }
 
 struct BoltzSubMarineSwap: Codable {
-    let id, wallet: String
-    let amount: Int
-    let paymentHash: String
-    let time: Int
-    let status, refundPrivkey, refundAddress, boltzID: String
-    let expectedAmount, timeoutBlockHeight: Int
-    let address, bip21, redeemScript: String
+    public let id, wallet: String
+    public let amount: Int
+    public let paymentHash: String
+    public let time: Int
+    public let status, refundPrivkey, refundAddress, boltzID: String
+    public let expectedAmount, timeoutBlockHeight: Int
+    public let address, bip21, redeemScript: String
 
     enum CodingKeys: String, CodingKey {
         case id, wallet, amount
@@ -439,22 +439,22 @@ struct BoltzSubMarineSwap: Codable {
 }
 
 struct Status: Codable {
-    let status: String?
-    let detail: String?
-    let success: String?
+    public let status: String?
+    public let detail: String?
+    public let success: String?
 }
 
 public struct LNURLWithdraw: Codable {
     
-    let id, wallet, title: String
-    let minWithdrawable, maxWithdrawable, uses, waitTime: Int
-    let isUnique: Bool
-    let uniqueHash, k1: String
-    let openTime, used: Int
-    let usescsv: String
-    let number: Int
-    let webhookURL: String
-    let lnurl: String
+    public let id, wallet, title: String
+    public let minWithdrawable, maxWithdrawable, uses, waitTime: Int
+    public let isUnique: Bool
+    public let uniqueHash, k1: String
+    public let openTime, used: Int
+    public let usescsv: String
+    public let number: Int
+    public let webhookURL: String
+    public let lnurl: String
 
     enum CodingKeys: String, CodingKey {
         case id, wallet, title
@@ -473,14 +473,14 @@ public struct LNURLWithdraw: Codable {
 }
 
 public struct DecodedLNURLP: Codable {
-    let domain, tag: String
-    let callback: String
-    let minSendable, maxSendable: Int
-    let metadata: String
-    let kind: LNURLType
-    let fixed: Bool
-    let descriptionHash, description: String
-    let commentAllowed: Int
+    public let domain, tag: String
+    public let callback: String
+    public let minSendable, maxSendable: Int
+    public let metadata: String
+    public let kind: LNURLType
+    public let fixed: Bool
+    public let descriptionHash, description: String
+    public let commentAllowed: Int
 
     enum CodingKeys: String, CodingKey {
         case domain, tag, callback, minSendable, maxSendable, metadata, kind, fixed
@@ -490,31 +490,31 @@ public struct DecodedLNURLP: Codable {
 }
 
 public struct DecodedLNURLW: Codable {
-    let domain: String
-    let tag: String
-    let callback: String
-    let k1: String
-    let minWithdrawable, maxWithdrawable: Int
-    let defaultDescription: String
-    let kind: LNURLType
-    let fixed: Bool
+    public let domain: String
+    public let tag: String
+    public let callback: String
+    public let k1: String
+    public let minWithdrawable, maxWithdrawable: Int
+    public let defaultDescription: String
+    public let kind: LNURLType
+    public let fixed: Bool
 }
 
 public struct DecodedLNURLAuth: Codable {
-    let domain: String
-    let kind: LNURLType
-    let callback: String
-    let pubkey: String
+    public let domain: String
+    public let kind: LNURLType
+    public let callback: String
+    public let pubkey: String
 }
 
 public struct DecodedLNURL: Codable {
-    let lnurl: String
-    let kind: LNURLType
-    let min, max: Int?
-    let description: String?
-    let domain: String
-    let callback: String?
-    let descriptionHash: String?
+    public let lnurl: String
+    public let kind: LNURLType
+    public let min, max: Int?
+    public let description: String?
+    public let domain: String
+    public let callback: String?
+    public let descriptionHash: String?
     
     init(lnurl: String, kind: LNURLType, min: Int?, max: Int?, description: String?, domain: String, callback: String, descriptionHash: String) {
         self.lnurl = lnurl
@@ -560,14 +560,14 @@ extension Data {
 public typealias LNURLPayLinks = [LNURLPayLink]
 
 public struct LNURLPayLink: Codable {
-    let id: String
-    let wallet: String
-    let min, servedMeta, servedPR: Int
-    let webhookURL, successText, successURL, currency: String?
-    let commentChars, max, fiatBaseMultiplier: Int
-    let lnurl: String
-    let zaps: Bool?
-    let domain: String?
+    public let id: String
+    public let wallet: String
+    public let min, servedMeta, servedPR: Int
+    public let webhookURL, successText, successURL, currency: String?
+    public let commentChars, max, fiatBaseMultiplier: Int
+    public let lnurl: String
+    public let zaps: Bool?
+    public let domain: String?
 
     enum CodingKeys: String, CodingKey {
         case id, wallet
@@ -588,12 +588,12 @@ public struct LNURLPayLink: Codable {
 }
 
 public struct Balance: Codable {
-    let name: String
-    let balance: Int
+    public let name: String
+    public let balance: Int
 }
 
 public struct Invoice: Codable, Hashable, Equatable {
-    let paymentHash, paymentRequest, checkingID: String
+    public let paymentHash, paymentRequest, checkingID: String
 
     enum CodingKeys: String, CodingKey {
         case paymentHash = "payment_hash"
@@ -605,16 +605,16 @@ public struct Invoice: Codable, Hashable, Equatable {
 }
 
 public struct LNBitsError: Codable {
-    let detail: String?
+    public let detail: String?
 }
 
 public struct CheckPaid: Codable {
-    let paid: Bool
-    let preimage: String
+    public let paid: Bool
+    public let preimage: String
 }
 
 struct InvoicePaid: Codable {
-    let paymentHash, checkingID: String
+    public let paymentHash, checkingID: String
 
     enum CodingKeys: String, CodingKey {
         case paymentHash = "payment_hash"
@@ -623,16 +623,16 @@ struct InvoicePaid: Codable {
 }
 
 struct InvoiceUI: Hashable, Equatable {
-    let invoice: Invoice
-    let sats: Int
+    public let invoice: Invoice
+    public let sats: Int
     
     static let demo = InvoiceUI(invoice: .demo, sats: 11)
 }
 
 
 struct DecodedInvoiceUI: Codable, Hashable {
-    let decoded: DecodedInvoice
-    let bolt11: String
+    public let decoded: DecodedInvoice
+    public let bolt11: String
     
     static let demo = DecodedInvoiceUI(decoded: .demo, bolt11: "")
 }
@@ -649,21 +649,21 @@ public struct DecodedInvoice: Codable, Hashable {
         
         static let demo = DecodedInvoice(paymentHash: "", amountMsat: 1, description: "", descriptionHash: nil, payee: "", date: 1, expiry: 1, secret: "", routeHints: [], minFinalCltvExpiry: 1)
         
-        let paymentHash: String
-        let amountMsat: Int
-        let description: String
-        let descriptionHash: JSONNull?
-        let payee: String
-        let date, expiry: Int
-        let secret: String
-        let routeHints: [[RouteHint]]
-        let minFinalCltvExpiry: Int
+    public let paymentHash: String
+    public let amountMsat: Int
+    public let description: String
+    public let descriptionHash: JSONNull?
+    public let payee: String
+    public let date, expiry: Int
+    public let secret: String
+    public let routeHints: [[RouteHint]]
+    public let minFinalCltvExpiry: Int
     
-    var amount: Int {
+    public var amount: Int {
         amountMsat * 1000
     }
 
-        enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
             case paymentHash = "payment_hash"
             case amountMsat = "amount_msat"
             case description
@@ -674,11 +674,11 @@ public struct DecodedInvoice: Codable, Hashable {
         }
     }
 
-    enum RouteHint: Codable {
+public enum RouteHint: Codable {
         case integer(Int)
         case string(String)
 
-        init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
             let container = try decoder.singleValueContainer()
             if let x = try? container.decode(Int.self) {
                 self = .integer(x)
@@ -702,9 +702,7 @@ public struct DecodedInvoice: Codable, Hashable {
         }
     }
 
-    // MARK: - Encode/decode helpers
-
-    class JSONNull: Codable, Hashable {
+public class JSONNull: Codable, Hashable {
 
         public static func == (lhs: JSONNull, rhs: JSONNull) -> Bool {
             return true
@@ -713,7 +711,7 @@ public struct DecodedInvoice: Codable, Hashable {
         public func hash(into hasher: inout Hasher) {
         }
 
-        public init() {}
+        init() {}
 
         public required init(from decoder: Decoder) throws {
             let container = try decoder.singleValueContainer()
@@ -745,4 +743,4 @@ public enum LNBitsErr: Error {
 }
 
 
-typealias LNBitsTransactions = [LNBitsTransaction]
+public typealias LNBitsTransactions = [LNBitsTransaction]
