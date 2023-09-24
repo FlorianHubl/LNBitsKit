@@ -721,7 +721,7 @@ public class JSONNull: Codable, Hashable {
         }
     }
 
-public struct LNBitsTransaction: Codable {
+public struct LNBitsTransaction: Codable, Hashable {
     public let checking_id: String
     public let pending: Bool
     public var amount: Int
