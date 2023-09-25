@@ -530,7 +530,7 @@ public struct DecodedLNURLAuth: Codable {
     public let pubkey: String
 }
 
-public struct DecodedLNURL: Codable {
+public struct DecodedLNURL: Codable, Hashable {
     public let lnurl: String
     public let kind: LNURLType
     public let min, max: Int?
