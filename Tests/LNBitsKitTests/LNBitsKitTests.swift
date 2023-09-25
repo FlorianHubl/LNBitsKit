@@ -6,6 +6,10 @@ final class LNBitsKitTests: XCTestCase {
         if #available(iOS 13.0.0, *) {
 //            let lnbits = LNBits(server: "https://legend.lnbits.com", walletID: "45d1fcbb480f4c4eb670a27aa1ce08a9", adminKey: "a8700717f9f14b58ac07595734c139bf", invoiceKey: "948352def9e1483d9f8719c2f6a1fb87")
             
+            let lnbits = try await getNewLNBitsWallet(server: "https://legend.lnbits.com")
+            print(try! lnbits.getWalletURL())
+            try await lnbits.deleteWallet()
+            
 //            let swap = try await lnbits.getSubMarineSwaps()
 //
 //            print(swap)
