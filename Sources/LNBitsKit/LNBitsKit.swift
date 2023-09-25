@@ -218,7 +218,7 @@ public struct LNBits {
     
     // Decode LNURL
     
-    func decodeLNURL(lnurl: String) async throws -> DecodedLNURL {
+    public func decodeLNURL(lnurl: String) async throws -> DecodedLNURL {
         
         let request = getRequest(for: .lnurlScan, method: .get, urlExtention: lnurl)
         
@@ -243,7 +243,7 @@ public struct LNBits {
     
     // Pay LNURL Pay Link
     
-    func payLNURL(lnurl: String, amount: Int) async throws {
+    public func payLNURL(lnurl: String, amount: Int) async throws {
         let decoded = try await decodeLNURL(lnurl: lnurl)
         print(decoded)
         print(decoded.callback!)
@@ -253,13 +253,13 @@ public struct LNBits {
         _ = try await requestType.request(request: request)
     }
     
-    struct DecodedLNURLType: Codable {
+    public struct DecodedLNURLType: Codable {
         let kind: LNURLType
     }
     
     // Create LNURL
     
-    func createLNURLWithdraw(title: String = "Withdraw", min: Int = 1, max: Int = 100000000, uses: Int = 1, waitTime: Int = 1) async throws -> LNURLWithdraw {
+    public func createLNURLWithdraw(title: String = "Withdraw", min: Int = 1, max: Int = 100000000, uses: Int = 1, waitTime: Int = 1) async throws -> LNURLWithdraw {
         let request = getRequest(for: .lnurlw, method: .post, payLoad: "{\"title\": \"\(title)\", \"min_withdrawable\": \(min), \"max_withdrawable\": \(max), \"uses\": \(uses), \"wait_time\": \(waitTime), \"is_unique\": false, \"webhook_url\": \"\"}", admin: true)
         let lnurl = try await requestType.request(request: request)
         return try JSONDecoder().decode(LNURLWithdraw.self, from: lnurl.0)
@@ -267,7 +267,7 @@ public struct LNBits {
     
     // List LNURLW
     
-    func getLNURLWithdraws() async throws -> [LNURLWithdraw] {
+    public func getLNURLWithdraws() async throws -> [LNURLWithdraw] {
         let request = getRequest(for: .lnurlw, method: .get, admin: true)
         let lnurl = try await requestType.request(request: request)
         return try JSONDecoder().decode([LNURLWithdraw].self, from: lnurl.0)
@@ -275,7 +275,7 @@ public struct LNBits {
     
     // Withdraw LNURL Withdraw Link
     
-    func withdrawFromLNURLWithdraw(lnurl: String, amount: Int? = nil, memo: String? = "") async throws {
+    public func withdrawFromLNURLWithdraw(lnurl: String, amount: Int? = nil, memo: String? = "") async throws {
         let ln = try await decodeLNURL(lnurl: lnurl)
         guard ln.kind == .withdraw else {throw LNBitsErr.error("LNBits Error: LNURL is not a withdraw link")}
         
@@ -293,19 +293,19 @@ public struct LNBits {
         try handleError(data: result.0)
     }
     
-    func deleteLNURLPay(id: String) async throws {
+    public func deleteLNURLPay(id: String) async throws {
         let request = getRequest(for: .lnurlp, method: .delete, urlExtention: id, admin: true)
         let result = try await requestType.request(request: request)
         try handleError(data: result.0)
     }
     
-    func deleteLNURLWithdraw(id: String) async throws {
+    public func deleteLNURLWithdraw(id: String) async throws {
         let request = getRequest(for: .lnurlw, method: .delete, urlExtention: id, admin: true)
         let result = try await requestType.request(request: request)
         try handleError(data: result.0)
     }
     
-    func lnurlAuth(lnurl: String) async throws {
+    public func lnurlAuth(lnurl: String) async throws {
         let ln = try await decodeLNURL(lnurl: lnurl)
         
         guard ln.kind == .auth else {throw LNBitsErr.error("LNBits Error: LNURL is not auth")}
@@ -325,7 +325,7 @@ public struct LNBits {
     
     // Bitcoin --> Lightning
     
-    func createSubMarineSwap(amount: Int, refundAddress: String) async throws -> BoltzSubMarineSwap {
+    public func createSubMarineSwap(amount: Int, refundAddress: String) async throws -> BoltzSubMarineSwap {
         let request = getRequest(for: .boltzsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"refund_address\": \"\(refundAddress)\",\"amount\": \"\(amount)\",\"feerate\": false}", admin: true)
 
         let result = try await requestType.request(request: request)
@@ -335,7 +335,7 @@ public struct LNBits {
         return swap
     }
 
-    func getSubMarineSwaps() async throws -> [BoltzSubMarineSwap] {
+    public func getSubMarineSwaps() async throws -> [BoltzSubMarineSwap] {
         let request = getRequest(for: .boltzsms, method: .get)
         let result = try await requestType.request(request: request)
         try handleError(data: result.0)
@@ -344,21 +344,21 @@ public struct LNBits {
 
     // Lightning --> Bitcoin
 
-    func createReversedSubMarineSwap(amount: Int, onChainAddress: String) async throws -> BoltzReversedSubMarineSwap {
+    public func createReversedSubMarineSwap(amount: Int, onChainAddress: String) async throws -> BoltzReversedSubMarineSwap {
         let request = getRequest(for: .boltzrsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"amount\": \"\(amount)\",\"instant_settlement\": true,\"onchain_address\": \"\(onChainAddress)\"}", admin: true)
         let result = try await requestType.request(request: request)
         try handleError(data: result.0)
         return try JSONDecoder().decode(BoltzReversedSubMarineSwap.self, from: result.0)
     }
 
-    func getReversedSubMarineSwaps() async throws -> [BoltzReversedSubMarineSwap] {
+    public func getReversedSubMarineSwaps() async throws -> [BoltzReversedSubMarineSwap] {
         let request = getRequest(for: .boltzrsms, method: .get)
         let result = try await requestType.request(request: request)
         try handleError(data: result.0)
         return try JSONDecoder().decode([BoltzReversedSubMarineSwap].self, from: result.0)
     }
 
-    func refundSubMarineSwap(swapID: String) async throws -> RefundSubMarineSwap {
+    public func refundSubMarineSwap(swapID: String) async throws -> RefundSubMarineSwap {
         let request = getRequest(for: .boltzsmsr, method: .post, payLoad: "{\"swap_id\": \"\(swapID)\"}", admin: true)
         let result = try await requestType.request(request: request)
         try handleError(data: result.0)
@@ -371,7 +371,7 @@ public struct LNBits {
 
 // --------------------------------- Models ------------------------------------
 
-struct RefundSubMarineSwap: Codable {
+public struct RefundSubMarineSwap: Codable {
     public let id, wallet: String
     public let amount: Int
     public let feerate: Bool
@@ -398,7 +398,7 @@ struct RefundSubMarineSwap: Codable {
 }
 
 
-struct BoltzReversedSubMarineSwap: Codable {
+public struct BoltzReversedSubMarineSwap: Codable {
     public let id, wallet: String
     public let amount: Int
     public let onchainAddress: String
@@ -425,7 +425,7 @@ struct BoltzReversedSubMarineSwap: Codable {
     }
 }
 
-struct BoltzSubMarineSwap: Codable {
+public struct BoltzSubMarineSwap: Codable {
     public let id, wallet: String
     public let amount: Int
     public let paymentHash: String
