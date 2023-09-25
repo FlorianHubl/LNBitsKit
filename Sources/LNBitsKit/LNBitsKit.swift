@@ -371,7 +371,7 @@ public enum LightningType {
     case lnurl
 }
 
-public func checkType(input: String) -> LightningType? {
+public func checkLightningType(input: String) -> LightningType? {
     if input.prefix(4) == "lnbc" || input.prefix(4) == "LNBC" {
         return .bolt11
     }
