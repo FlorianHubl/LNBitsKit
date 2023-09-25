@@ -364,9 +364,22 @@ public struct LNBits {
         try handleError(data: result.0)
         return try JSONDecoder().decode(RefundSubMarineSwap.self, from: result.0)
     }
-    
 }
 
+public enum LightningType {
+    case bolt11
+    case lnurl
+}
+
+public func checkType(input: String) -> LightningType? {
+    if input.prefix(4) == "lnbc" || input.prefix(4) == "LNBC" {
+        return .bolt11
+    }
+    if input.prefix(5) == "lnurl" || input.prefix(5) == "LNURL" {
+        return .lnurl
+    }
+    return nil
+}
 
 
 // --------------------------------- Models ------------------------------------
