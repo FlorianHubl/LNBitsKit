@@ -539,6 +539,8 @@ public struct DecodedLNURL: Codable, Hashable {
     public let callback: String?
     public let descriptionHash: String?
     
+    public static let demo = DecodedLNURL(lnurl: "lnurl", kind: .pay, domain: "", callback: "")
+    
     init(lnurl: String, kind: LNURLType, min: Int?, max: Int?, description: String?, domain: String, callback: String, descriptionHash: String) {
         self.lnurl = lnurl
         self.kind = kind
