@@ -739,3 +739,42 @@ public enum LNBitsErr: Error {
 
 
 public typealias LNBitsTransactions = [LNBitsTransaction]
+
+public struct LNBitsKeys: Codable {
+    let adminkey: String
+    let balance_msat: Int
+    let id: String
+    let inkey: String
+    let name: String
+    let user: String
+}
+
+
+@available(iOS 13.0.0, *)
+public func LNBitsURL(input: String, tor: SwiftTor? = nil) async throws -> LNBits {
+    guard let url = URL(string: input) else {throw LNBitsErr.error("Not a URL")}
+    let serverURL = convertToServer(input)
+    let c = serverURL.suffix(6) == ".onion"
+    let d: RequestType  = c ? tor ?? SwiftTor() : ClearnetRequest()
+    let e = try await d.request(request: URLRequest(url: url))
+    guard let f = String(data: e.0, encoding: .utf8) else {throw LNBitsErr.error("Request result is not a String")}
+    guard let rangeStart = f.range(of: "window.wallet = ") else {throw LNBitsErr.error("Not found window.wallet = ")}
+    guard let rangeEnd = f.range(of: ";", range: rangeStart.upperBound..<f.endIndex) else {throw LNBitsErr.error("Not found ;")}
+    guard let a = String(f[rangeStart.upperBound..<rangeEnd.lowerBound]).data(using: .utf8) else {throw LNBitsErr.error("Not found lower and upper Bound")}
+    guard let b = try? JSONDecoder().decode(LNBitsKeys.self, from: a) else {throw LNBitsErr.error("Error Decoding")}
+    return LNBits(server: serverURL, adminKey: b.adminkey, walletID: b.id, tor: tor)
+}
+
+func convertToServer(_ link: String) -> String {
+    var l = ""
+    if link.contains("/wallet") {
+        if let range = link.range(of: "/wallet") {
+            l = String(link.prefix(upTo: range.lowerBound))
+        }else {
+            l = link
+        }
+    }else {
+        l = link
+    }
+    return l
+}
