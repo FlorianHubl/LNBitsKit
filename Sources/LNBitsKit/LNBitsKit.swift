@@ -440,6 +440,8 @@ public struct BoltzReversedSubMarineSwap: Codable, Hashable {
     public let lockupAddress, invoice: String
     public let onchainAmount, timeoutBlockHeight: Int
     public let redeemScript: String
+    
+    public static let demo = BoltzReversedSubMarineSwap(id: "id", wallet: "wallet", amount: 21, onchainAddress: "onchainAddress", instantSettlement: true, time: 21, status: "status", boltzID: "boltzID", preimage: "preimage", claimPrivkey: "claimPrivkey", lockupAddress: "lockupAddress", invoice: "invoice", onchainAmount: 21, timeoutBlockHeight: 21, redeemScript: "redeemScript")
 
     enum CodingKeys: String, CodingKey {
         case id, wallet, amount
@@ -465,6 +467,8 @@ public struct BoltzSubMarineSwap: Codable, Hashable {
     public let status, refundPrivkey, refundAddress, boltzID: String
     public let expectedAmount, timeoutBlockHeight: Int
     public let address, bip21, redeemScript: String
+    
+    public static let demo = BoltzSubMarineSwap(id: "id", wallet: "wallet", amount: 21, paymentHash: "paymentHash", time: 21, status: "status", refundPrivkey: "refundPrivkey", refundAddress: "refundAddress", boltzID: "boltzID", expectedAmount: 21, timeoutBlockHeight: 21, address: "address", bip21: "bip21", redeemScript: "redeemScript")
 
     enum CodingKeys: String, CodingKey {
         case id, wallet, amount
