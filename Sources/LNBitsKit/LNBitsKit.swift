@@ -157,6 +157,7 @@ public struct LNBits {
     public func payInvoice(invoice: String) async throws {
         let request = getRequest(for: .invoice, method: .post, payLoad: "{\"out\": true, \"bolt11\": \"\(invoice)\"}", admin: true)
         let a = try await requestType.request(request: request)
+        a.0.print()
         do {
             _ = try JSONDecoder().decode(InvoicePaid.self, from: a.0)
         }catch {
