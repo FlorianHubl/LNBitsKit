@@ -362,9 +362,9 @@ public struct LNBits {
 
     // Lightning --> Bitcoin
 
-    public func createReversedSubMarineSwap(amount: Int, onChainAddress: String) async throws -> BoltzReversedSubMarineSwap {
+    public func createReversedSubMarineSwap(amount: Int, onChainAddress: String, feeRate: Int) async throws -> BoltzReversedSubMarineSwap {
         guard let walletID = walletID else {throw LNBitsErr.error("createReversedSubMarineSwap missing walletID")}
-        let request = getRequest(for: .boltzrsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"amount\": \"\(amount)\",\"instant_settlement\": true,\"onchain_address\": \"\(onChainAddress)\"}", admin: true)
+        let request = getRequest(for: .boltzrsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"amount\": \"\(amount)\",\"instant_settlement\": true,\"onchain_address\": \"\(onChainAddress)\", \"feerate\": true, \"feerate_value\": \(feeRate)}", admin: true)
         let result = try await requestType.request(request: request)
         try handleError(data: result.0)
         return try JSONDecoder().decode(BoltzReversedSubMarineSwap.self, from: result.0)
