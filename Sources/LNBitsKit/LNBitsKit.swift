@@ -430,7 +430,7 @@ public struct RefundSubMarineSwap: Codable {
 }
 
 
-public struct BoltzReversedSubMarineSwap: Codable, Hashable {
+public struct BoltzReversedSubMarineSwap: Codable, Hashable, Identifiable {
     public let id, wallet: String
     public let amount: Int
     public let onchainAddress: String
@@ -459,7 +459,7 @@ public struct BoltzReversedSubMarineSwap: Codable, Hashable {
     }
 }
 
-public struct BoltzSubMarineSwap: Codable, Hashable {
+public struct BoltzSubMarineSwap: Codable, Hashable, Identifiable {
     public let id, wallet: String
     public let amount: Int
     public let paymentHash: String
