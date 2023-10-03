@@ -344,7 +344,7 @@ public struct LNBits {
     // Bitcoin --> Lightning
     
     public func createSubMarineSwap(amount: Int, refundAddress: String) async throws -> BoltzSubMarineSwap {
-        guard let walletID = walletID else {throw LNBitsErr.error("createReversedSubMarineSwap missing walletID")}
+        guard let walletID = walletID else {throw LNBitsErr.error("createSubMarineSwap missing walletID")}
         let request = getRequest(for: .boltzsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"refund_address\": \"\(refundAddress)\",\"amount\": \"\(amount)\",\"feerate\": false}", admin: true)
         let result = try await requestType.request(request: request)
         result.0.print()
@@ -769,6 +769,8 @@ public struct LNBitsTransaction: Codable, Hashable {
     public let bolt11, preimage, payment_hash: String
     public let expiry: Int
     public let wallet_id: String
+    
+    static public let demo = LNBitsTransaction(checking_id: "checking_id", pending: false, amount: 1, fee: 1, memo: "memo", time: 0, bolt11: "bolt11", preimage: "preimage", payment_hash: "payment_hash", expiry: 0, wallet_id: "wallet_id")
 }
 
 public enum LNBitsErr: Error {
