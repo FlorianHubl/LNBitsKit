@@ -491,7 +491,7 @@ struct Status: Codable {
     public let success: String?
 }
 
-public struct LNURLWithdraw: Codable {
+public struct LNURLWithdraw: Codable, Hashable {
     
     public let id, wallet, title: String
     public let minWithdrawable, maxWithdrawable, uses, waitTime: Int
@@ -502,6 +502,8 @@ public struct LNURLWithdraw: Codable {
     public let number: Int
     public let webhookURL: String
     public let lnurl: String
+    
+    public static let demo = LNURLWithdraw(id: "id", wallet: "wallet", title: "title", minWithdrawable: 1, maxWithdrawable: 21, uses: 1, waitTime: 1, isUnique: true, uniqueHash: "uniqueHash", k1: "k1", openTime: 1, used: 1, usescsv: "usescsv", number: 1, webhookURL: "webhookURL", lnurl: "lnurl")
 
     enum CodingKeys: String, CodingKey {
         case id, wallet, title
