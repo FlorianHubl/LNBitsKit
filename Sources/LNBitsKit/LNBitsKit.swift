@@ -491,7 +491,7 @@ struct Status: Codable {
     public let success: String?
 }
 
-public struct LNURLWithdraw: Codable, Hashable {
+public struct LNURLWithdraw: Codable, Hashable, Identifiable {
     
     public let id, wallet, title: String
     public let minWithdrawable, maxWithdrawable, uses, waitTime: Int
