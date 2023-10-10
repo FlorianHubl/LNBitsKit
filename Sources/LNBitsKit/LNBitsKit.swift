@@ -384,6 +384,13 @@ public struct LNBits {
         try handleError(data: result.0)
         return try JSONDecoder().decode(RefundSubMarineSwap.self, from: result.0)
     }
+    
+    // Boltcard
+    
+    public func createBoltCard(name: String, uid: String, txLimit: Int, dailyLimit: Int, k0: String, k1: String, k2: String, prevk0: String, prevk1: String, prevk2: String) {
+        
+    }
+    
 }
 
 public enum LightningType {
@@ -404,7 +411,7 @@ public func checkLightningType(input: String) -> LightningType? {
 
 // --------------------------------- Models ------------------------------------
 
-public struct RefundSubMarineSwap: Codable {
+public struct RefundSubMarineSwap: Codable, Hashable {
     public let id, wallet: String
     public let amount: Int
     public let feerate: Bool
@@ -521,7 +528,7 @@ public struct LNURLWithdraw: Codable, Hashable, Identifiable {
     }
 }
 
-public struct DecodedLNURLP: Codable {
+public struct DecodedLNURLP: Codable, Hashable {
     public let domain, tag: String
     public let callback: String
     public let minSendable, maxSendable: Int
@@ -538,7 +545,7 @@ public struct DecodedLNURLP: Codable {
     }
 }
 
-public struct DecodedLNURLW: Codable {
+public struct DecodedLNURLW: Codable, Hashable {
     public let domain: String
     public let tag: String
     public let callback: String
@@ -549,7 +556,7 @@ public struct DecodedLNURLW: Codable {
     public let fixed: Bool
 }
 
-public struct DecodedLNURLAuth: Codable {
+public struct DecodedLNURLAuth: Codable, Hashable {
     public let domain: String
     public let kind: LNURLType
     public let callback: String
@@ -610,7 +617,7 @@ extension Data {
 
 public typealias LNURLPayLinks = [LNURLPayLink]
 
-public struct LNURLPayLink: Codable {
+public struct LNURLPayLink: Codable, Hashable {
     public let id: String
     public let wallet: String
     public let min, servedMeta, servedPR: Int
@@ -664,7 +671,7 @@ public struct CheckPaid: Codable {
     public let preimage: String
 }
 
-struct InvoicePaid: Codable {
+struct InvoicePaid: Codable, Hashable {
     public let paymentHash, checkingID: String
 
     enum CodingKeys: String, CodingKey {
@@ -783,7 +790,7 @@ public enum LNBitsErr: Error {
 
 public typealias LNBitsTransactions = [LNBitsTransaction]
 
-public struct LNBitsKeys: Codable {
+public struct LNBitsKeys: Codable, Hashable {
     let adminkey: String
     let balance_msat: Int
     let id: String
