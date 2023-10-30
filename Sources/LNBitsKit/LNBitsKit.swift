@@ -8,24 +8,24 @@
 import Foundation
 import SwiftTor
 
-@available(iOS 13.0, *)
+@available(iOS 13.0.0, macOS 12.0.0, *)
 struct ClearnetRequest: RequestType {
     func request(request: URLRequest) async throws -> (Data, URLResponse) {
         return try await URLSession.shared.data(for: request)
     }
 }
 
-@available(iOS 13.0, *)
+@available(iOS 13.0, macOS 13.0, *)
 extension SwiftTor: RequestType {
     
 }
 
-@available(iOS 13.0, *)
+@available(iOS 13.0, macOS 13.0, *)
 protocol RequestType {
     func request(request: URLRequest) async throws -> (Data, URLResponse)
 }
 
-@available(iOS 13.0.0, macOS 12.0.0,  *)
+@available(iOS 13.0.0, macOS 13.0.0,  *)
 public struct LNBits {
     
     public let server: String
@@ -800,7 +800,7 @@ public struct LNBitsKeys: Codable, Hashable {
 }
 
 
-@available(iOS 13.0.0, *)
+@available(iOS 13.0.0, macOS 13.0.0, *)
 public func LNBitsURL(input: String, tor: SwiftTor? = nil) async throws -> LNBits {
     guard let url = URL(string: input) else {throw LNBitsErr.error("Not a URL")}
     let serverURL = convertToServer(input)
@@ -834,7 +834,7 @@ func convertToServer(_ link: String) -> String {
     return l
 }
 
-@available(iOS 13.0, *)
+@available(iOS 13.0.0, macOS 13.0.0, *)
 public func getNewLNBitsWallet(server: String, tor: SwiftTor? = nil) async throws -> LNBits {
     let c = server.suffix(6) == ".onion"
     let clearURL = convertToServer(server)
@@ -846,7 +846,7 @@ public func getNewLNBitsWallet(server: String, tor: SwiftTor? = nil) async throw
     return LNBits(server: clearURL, adminKey: keys.adminkey, walletID: keys.id, user: keys.user, tor: tor)
 }
 
-@available(iOS 13.0, *)
+@available(iOS 13.0.0, macOS 13.0.0, *)
 public func getDemoLNBits() async throws -> LNBits {
     let serverURL = "https://legend.lnbits.com/wallet"
     guard let url = URL(string: serverURL) else {throw LNBitsErr.error("Not a URL")}
