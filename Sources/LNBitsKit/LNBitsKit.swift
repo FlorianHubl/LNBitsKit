@@ -8,24 +8,24 @@
 import Foundation
 import SwiftTor
 
-@available(iOS 13.0, *)
+@available(iOS 13.0.0, macOS 12.0.0, *)
 struct ClearnetRequest: RequestType {
     func request(request: URLRequest) async throws -> (Data, URLResponse) {
         return try await URLSession.shared.data(for: request)
     }
 }
 
-@available(iOS 13.0, *)
+@available(iOS 13.0, macOS 13.0, *)
 extension SwiftTor: RequestType {
     
 }
 
-@available(iOS 13.0, *)
+@available(iOS 13.0, macOS 13.0, *)
 protocol RequestType {
     func request(request: URLRequest) async throws -> (Data, URLResponse)
 }
 
-@available(iOS 13.0.0, macOS 12.0.0,  *)
+@available(iOS 13.0.0, macOS 13.0.0,  *)
 public struct LNBits {
     
     public let server: String
@@ -681,41 +681,18 @@ struct InvoicePaid: Codable, Hashable {
 }
 
 public struct DecodedInvoice: Codable, Hashable {
-    static public func == (lhs: DecodedInvoice, rhs: DecodedInvoice) -> Bool {
-        lhs.paymentHash == rhs.paymentHash
-    }
-    
-    public func hash(into hasher: inout Hasher) {
-        
-    }
-    
-        
-        public static let demo = DecodedInvoice(paymentHash: "", amountMsat: 1, description: "", descriptionHash: nil, payee: "", date: 1, expiry: 1, secret: "", routeHints: [], minFinalCltvExpiry: 1)
-        
-    public let paymentHash: String
-    public let amountMsat: Int
+    public let currency: String
+    public let amount_msat: Int
+    public let date: Int
+    public let signature: String
+    public let payment_hash: String
+    public let payment_secret: String
     public let description: String
-    public let descriptionHash: JSONNull?
+    public let expiry: Int
+//    let features: PaymentFeatures
+    public let min_final_cltv_expiry: Int
     public let payee: String
-    public let date, expiry: Int
-    public let secret: String
-    public let routeHints: [[RouteHint]]
-    public let minFinalCltvExpiry: Int
-    
-    public var amount: Int {
-        amountMsat * 1000
-    }
-
-    enum CodingKeys: String, CodingKey {
-            case paymentHash = "payment_hash"
-            case amountMsat = "amount_msat"
-            case description
-            case descriptionHash = "description_hash"
-            case payee, date, expiry, secret
-            case routeHints = "route_hints"
-            case minFinalCltvExpiry = "min_final_cltv_expiry"
-        }
-    }
+}
 
 public enum RouteHint: Codable {
         case integer(Int)
@@ -800,7 +777,7 @@ public struct LNBitsKeys: Codable, Hashable {
 }
 
 
-@available(iOS 13.0.0, *)
+@available(iOS 13.0.0, macOS 13.0.0, *)
 public func LNBitsURL(input: String, tor: SwiftTor? = nil) async throws -> LNBits {
     guard let url = URL(string: input) else {throw LNBitsErr.error("Not a URL")}
     let serverURL = convertToServer(input)
@@ -834,7 +811,7 @@ func convertToServer(_ link: String) -> String {
     return l
 }
 
-@available(iOS 13.0, *)
+@available(iOS 13.0.0, macOS 13.0.0, *)
 public func getNewLNBitsWallet(server: String, tor: SwiftTor? = nil) async throws -> LNBits {
     let c = server.suffix(6) == ".onion"
     let clearURL = convertToServer(server)
@@ -846,7 +823,7 @@ public func getNewLNBitsWallet(server: String, tor: SwiftTor? = nil) async throw
     return LNBits(server: clearURL, adminKey: keys.adminkey, walletID: keys.id, user: keys.user, tor: tor)
 }
 
-@available(iOS 13.0, *)
+@available(iOS 13.0.0, macOS 13.0.0, *)
 public func getDemoLNBits() async throws -> LNBits {
     let serverURL = "https://legend.lnbits.com/wallet"
     guard let url = URL(string: serverURL) else {throw LNBitsErr.error("Not a URL")}
