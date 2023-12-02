@@ -315,20 +315,22 @@ public struct LNBits {
         try handleError(data: result.0)
     }
     
+    public func auth(callback: String) async throws {
+        var request = URLRequest(url: URL(string: "\(server)/api/v1/lnurlauth")!)
+        request.addValue(adminKey, forHTTPHeaderField: "X-Api-Key")
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = "{\"callback\": \"\(callback)\"}".data(using: .utf8)
+        let result = try await requestType.request(request: request)
+        try handleError(data: result.0)
+    }
+    
     public func lnurlAuth(lnurl: String) async throws {
         let ln = try await decodeLNURL(lnurl: lnurl)
         
         guard ln.kind == .auth else {throw LNBitsErr.error("LNBits Error: LNURL is not auth")}
         
-        var request = URLRequest(url: URL(string: "\(server)/api/v1/lnurlauth")!)
-        request.addValue(adminKey, forHTTPHeaderField: "X-Api-Key")
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = "{\"callback\": \"\(ln.callback!)\"}".data(using: .utf8)
-        
-        let result = try await requestType.request(request: request)
-        
-        try handleError(data: result.0)
+        try await auth(callback: ln.callback!)
     }
     
     public func deleteWallet() async throws {
