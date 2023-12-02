@@ -48,11 +48,4 @@ final class LNBitsKitTests: XCTestCase {
             // Fallback on earlier versions
         }
     }
-    
-    func testAuth() async throws {
-        let lnbits = LNBits(server: "https://legend.lnbits.com", adminKey: "fef8afaa0a974055a91d0b5fdc7f9648")
-        let a = try await lnbits.decodeLNURL(lnurl: "LNURL1DP68GURN8GHJ7MRFVA58GMNFDENKCMM8D9HZUMRFWEJJ7MR0VA5KU0MTXY7N2CFKXSUX2WFEX5CRYCEJXGUNJCEEVGUNYEF4V5MXYDRRVVCNXVMXVCMRJV3KX3JXVEF4XPJNZDMZX3JKYVTPXU6NYVRZXCMXZVNP8YN8GCT884KX7EMFDCA4HTRZ")
-        print(a)
-    }
-    
 }
