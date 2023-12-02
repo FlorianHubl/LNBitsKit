@@ -295,7 +295,6 @@ public struct LNBits {
         let lnurlBackURL = ln.callback! + "&pr=" + invoice.paymentRequest
         
         var request = URLRequest(url: URL(string: lnurlBackURL)!)
-        request.addValue(adminKey, forHTTPHeaderField: "X-Api-Key")
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
