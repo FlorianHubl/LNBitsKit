@@ -8,6 +8,12 @@
 import Foundation
 import SwiftTor
 
+public enum DebugLevel {
+    case zero
+    case urls
+    case all
+}
+
 @available(iOS 13.0.0, macOS 12.0.0, *)
 struct ClearnetRequest: RequestType {
     func request(request: URLRequest) async throws -> (Data, URLResponse) {
@@ -61,7 +67,9 @@ public struct LNBits {
     
     public var connection = false
     
-    public init(server: String, adminKey: String, walletID: String? = nil, user: String? = nil, tor: SwiftTor? = nil) {
+    let debug: DebugLevel
+    
+    public init(server: String, adminKey: String, walletID: String? = nil, user: String? = nil, tor: SwiftTor? = nil, debug: DebugLevel = .zero) {
         if server.suffix(6) == ".onion" {
             if let tor = tor {
                 self.requestType = tor
@@ -72,6 +80,7 @@ public struct LNBits {
             self.connection = true
             self.requestType = ClearnetRequest()
         }
+        self.debug = debug
         self.server = server
         self.walletID = walletID
         self.adminKey = adminKey
@@ -131,6 +140,9 @@ public struct LNBits {
     public func decodeInvoice(invoice: String) async throws -> DecodedInvoice {
         let request = getRequest(for: .payments, method: .post, payLoad: "{\"data\": \"\(invoice)\"}")
         let a = try await requestType.request(request: request)
+        if debug == .all {
+            print(String(data: a.0, encoding: .utf8)!)
+        }
         do {
             let decoded = try JSONDecoder().decode(DecodedInvoice.self, from: a.0)
             return decoded
@@ -194,7 +206,9 @@ public struct LNBits {
     
     private func getRequest(for i: LNBitsRequest, method: HTTPMethod, urlExtention: String? = nil, payLoad: String? = nil, admin: Bool = false) -> URLRequest {
         var request = URLRequest(url: URL(string: "\(server)\(i.rawValue)\(urlExtention != nil ? "/" : "")\(urlExtention ?? "")")!)
-        print(request.url!.absoluteString)
+        if debug != .zero {
+            print(request.url!.absoluteString)
+        }
         request.httpMethod = method.rawValue
         if let payLoad = payLoad {
             request = add(payload: payLoad, request)
@@ -206,7 +220,9 @@ public struct LNBits {
     
     private func add(payload: String, _ urlr: URLRequest) -> URLRequest {
         var url = urlr
-        print(payload)
+        if debug == .all {
+            print(payload)
+        }
         url.httpBody = payload.data(using: .utf8)
         return url
     }
@@ -256,9 +272,6 @@ public struct LNBits {
     
     public func payLNURL(lnurl: String, amount: Int) async throws {
         let decoded = try await decodeLNURL(lnurl: lnurl)
-        print(decoded)
-        print(decoded.callback!)
-        print(decoded.descriptionHash!)
         guard decoded.kind == .pay else {throw LNBitsErr.error("LNBits Error: LNURL is not a Pay Link")}
         let request = getRequest(for: .paylnurlp, method: .post, payLoad: "{\"description_hash\": \"\(decoded.descriptionHash!)\", \"callback\": \"\(decoded.callback!)\", \"amount\": \(amount * 1000), \"comment\": \"\", \"description\": \"\"}", admin: true)
         _ = try await requestType.request(request: request)
