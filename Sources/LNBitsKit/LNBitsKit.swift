@@ -701,7 +701,7 @@ public struct DecodedInvoice: Codable, Hashable {
     public let signature: String
     public let payment_hash: String
     public let payment_secret: String
-    public let description: String
+    public let description: String?
     public let expiry: Int
 //    let features: PaymentFeatures
     public let min_final_cltv_expiry: Int
