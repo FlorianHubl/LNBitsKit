@@ -695,13 +695,14 @@ struct InvoicePaid: Codable, Hashable {
 }
 
 public struct DecodedInvoice: Codable, Hashable {
-    public let currency: String
+    public let currency: String?
     public let amount_msat: Int
     public let date: Int
-    public let signature: String
+    public let signature: String?
     public let payment_hash: String
-    public let payment_secret: String
-    public let description: String
+    public let payment_secret: String?
+    public let secret: String?
+    public let description: String?
     public let expiry: Int
 //    let features: PaymentFeatures
     public let min_final_cltv_expiry: Int
@@ -797,7 +798,9 @@ public func LNBitsURL(input: String, tor: SwiftTor? = nil) async throws -> LNBit
     let serverURL = convertToServer(input)
     let c = serverURL.suffix(6) == ".onion"
     let d: RequestType  = c ? tor ?? SwiftTor() : ClearnetRequest()
+    print(url.absoluteString)
     let e = try await d.request(request: URLRequest(url: url))
+    print(String(data: e.0, encoding: .utf8)!)
     let keys = try lnbitsHTMLToKeys(input: e.0)
     return LNBits(server: serverURL, adminKey: keys.adminkey, walletID: keys.id, user: keys.user, tor: tor)
 }

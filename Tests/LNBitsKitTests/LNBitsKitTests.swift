@@ -48,4 +48,10 @@ final class LNBitsKitTests: XCTestCase {
             // Fallback on earlier versions
         }
     }
+    
+    func testURL() async throws {
+        let url = "https://legend.lnbits.com/wallet?wal=84e57251cf1b457d91621a84ff256f28"
+        let l = try await LNBitsURL(input: url)
+    }
+    
 }
