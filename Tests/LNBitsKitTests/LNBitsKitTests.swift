@@ -50,8 +50,13 @@ final class LNBitsKitTests: XCTestCase {
     }
     
     func testURL() async throws {
-        let url = "https://legend.lnbits.com/wallet?wal=84e57251cf1b457d91621a84ff256f28"
-        let l = try await LNBitsURL(input: url)
+        let url = "https://legend.lnbits.com"
+//        let l = try await LNBitsURL(input: url)
+    }
+    
+    func testLogin() async throws {
+        let a = try await loginLNBits(url: "https://legend.lnbits.com", username: "Flo", password: "btcwillwin", tor: nil)
+        print(a.wallets.first!.adminkey)
     }
     
 }

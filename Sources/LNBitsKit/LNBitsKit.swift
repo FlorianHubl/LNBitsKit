@@ -14,10 +14,24 @@ public enum DebugLevel {
     case all
 }
 
+class TrustSession: NSObject, URLSessionDelegate {
+    public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+           let urlCredential = URLCredential(trust: challenge.protectionSpace.serverTrust!)
+           completionHandler(.useCredential, urlCredential)
+        }
+}
+
+@available(iOS 13.0.0, macOS 12.0.0, *)
+struct ClearnetTrustRequest: RequestType {
+    func request(request: URLRequest) async throws -> (Data, URLResponse) {
+        return try await URLSession(configuration: URLSessionConfiguration.default, delegate: TrustSession(), delegateQueue: nil).data(for: request)
+    }
+}
+
 @available(iOS 13.0.0, macOS 12.0.0, *)
 struct ClearnetRequest: RequestType {
     func request(request: URLRequest) async throws -> (Data, URLResponse) {
-        return try await URLSession.shared.data(for: request)
+            return try await URLSession.shared.data(for: request)
     }
 }
 
@@ -54,6 +68,7 @@ public struct LNBits {
         case boltzsms = "/boltz/api/v1/swap"
         case boltzsmsr = "/boltz/api/v1/swap/refund"
         case boltzrsms = "/boltz/api/v1/swap/reverse"
+        case login = "/api/v1/auth"
     }
 
     enum HTTPMethod: String {
@@ -69,16 +84,24 @@ public struct LNBits {
     
     let debug: DebugLevel
     
-    public init(server: String, adminKey: String, walletID: String? = nil, user: String? = nil, tor: SwiftTor? = nil, debug: DebugLevel = .zero) {
+    public let tor: Bool
+    
+    public init(server: String, adminKey: String, walletID: String? = nil, user: String? = nil, tor: SwiftTor? = nil, debug: DebugLevel = .zero, ssl: Bool = true) {
         if server.suffix(6) == ".onion" {
             if let tor = tor {
                 self.requestType = tor
             }else {
                 self.requestType = SwiftTor()
             }
+            self.tor = true
         }else {
             self.connection = true
-            self.requestType = ClearnetRequest()
+            if ssl {
+                self.requestType = ClearnetRequest()
+            }else {
+                self.requestType = ClearnetTrustRequest()
+            }
+            self.tor = false
         }
         self.debug = debug
         self.server = server
@@ -88,8 +111,8 @@ public struct LNBits {
     }
     
     public func getWalletURL() throws -> String {
-        guard let walletID = walletID else {throw LNBitsErr.error("getWalletURL missing walletID")}
-        guard let user = user else {throw LNBitsErr.error("getWalletURL missing user")}
+        guard let walletID = walletID else {throw "getWalletURL missing walletID"}
+        guard let user = user else {throw "getWalletURL missing user"}
         return "\(server)/wallet?usr=\(user)&wal=\(walletID)"
     }
     
@@ -110,7 +133,11 @@ public struct LNBits {
     public func createInvoice(sats: Int, memo: String? = nil) async throws -> Invoice {
         let a = getRequest(for: .invoice, method: .post, payLoad: "{\"out\": false, \"amount\": \(sats), \"memo\": \"\(memo ?? "")\"}")
         let c = try await requestType.request(request: a)
-        return try JSONDecoder().decode(Invoice.self, from: c.0)
+        let r = try JSONDecoder().decode(Invoice.self, from: c.0)
+        if debug == .all {
+            print(r.paymentRequest)
+        }
+        return try r
     }
     
     public func checkIfPaid(invoice: Invoice) async throws -> Bool {
@@ -159,11 +186,13 @@ public struct LNBits {
         do {
             let decoded = try JSONDecoder().decode(LNBitsError.self, from: data)
             if let error = decoded.detail {
-                throw LNBitsErr.error(error)
+                throw error
             }
-        }catch LNBitsErr.error(let error){
-            throw LNBitsErr.error(error)
-        }catch {}
+        }catch let error as String {
+            throw error
+        }catch {
+            throw "Error"
+        }
     }
     
     public func payInvoice(invoice: String) async throws {
@@ -239,6 +268,9 @@ public struct LNBits {
     public func getPayLinks() async throws -> LNURLPayLinks {
         let request = getRequest(for: .lnurlp, method: .get, urlExtention: "")
         let a = try await requestType.request(request: request)
+        if debug == .all {
+            print(String(data: a.0, encoding: .utf8))
+        }
         let list = try JSONDecoder().decode(LNURLPayLinks.self, from: a.0)
         return list
     }
@@ -272,7 +304,7 @@ public struct LNBits {
     
     public func payLNURL(lnurl: String, amount: Int) async throws {
         let decoded = try await decodeLNURL(lnurl: lnurl)
-        guard decoded.kind == .pay else {throw LNBitsErr.error("LNBits Error: LNURL is not a Pay Link")}
+        guard decoded.kind == .pay else {throw "LNBits Error: LNURL is not a Pay Link"}
         let request = getRequest(for: .paylnurlp, method: .post, payLoad: "{\"description_hash\": \"\(decoded.descriptionHash!)\", \"callback\": \"\(decoded.callback!)\", \"amount\": \(amount * 1000), \"comment\": \"\", \"description\": \"\"}", admin: true)
         _ = try await requestType.request(request: request)
     }
@@ -301,7 +333,7 @@ public struct LNBits {
     
     public func withdrawFromLNURLWithdraw(lnurl: String, amount: Int? = nil, memo: String? = "") async throws {
         let ln = try await decodeLNURL(lnurl: lnurl)
-        guard ln.kind == .withdraw else {throw LNBitsErr.error("LNBits Error: LNURL is not a withdraw link")}
+        guard ln.kind == .withdraw else {throw "LNBits Error: LNURL is not a withdraw link"}
         
         let invoice = try await createInvoice(sats: amount ?? ln.max!, memo: memo)
         
@@ -341,13 +373,13 @@ public struct LNBits {
     public func lnurlAuth(lnurl: String) async throws {
         let ln = try await decodeLNURL(lnurl: lnurl)
         
-        guard ln.kind == .auth else {throw LNBitsErr.error("LNBits Error: LNURL is not auth")}
+        guard ln.kind == .auth else {throw "LNBits Error: LNURL is not auth"}
         
         try await auth(callback: ln.callback!)
     }
     
     public func deleteWallet() async throws {
-        guard let walletID = walletID else {throw LNBitsErr.error("deleteWallet missing walletID")}
+        guard let walletID = walletID else {throw "deleteWallet missing walletID"}
         let request = getRequest(for: .wallet, method: .delete, urlExtention: walletID, admin: true)
         let result = try await requestType.request(request: request)
 //        try handleError(data: result.0)
@@ -359,7 +391,7 @@ public struct LNBits {
     // Bitcoin --> Lightning
     
     public func createSubMarineSwap(amount: Int, refundAddress: String) async throws -> BoltzSubMarineSwap {
-        guard let walletID = walletID else {throw LNBitsErr.error("createSubMarineSwap missing walletID")}
+        guard let walletID = walletID else {throw "createSubMarineSwap missing walletID"}
         let request = getRequest(for: .boltzsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"refund_address\": \"\(refundAddress)\",\"amount\": \"\(amount)\",\"feerate\": false}", admin: true)
         let result = try await requestType.request(request: request)
         result.0.print()
@@ -378,7 +410,7 @@ public struct LNBits {
     // Lightning --> Bitcoin
 
     public func createReversedSubMarineSwap(amount: Int, onChainAddress: String, feeRate: Int) async throws -> BoltzReversedSubMarineSwap {
-        guard let walletID = walletID else {throw LNBitsErr.error("createReversedSubMarineSwap missing walletID")}
+        guard let walletID = walletID else {throw "createReversedSubMarineSwap missing walletID"}
         let request = getRequest(for: .boltzrsms, method: .post, payLoad: "{\"wallet\": \"\(walletID)\",\"amount\": \"\(amount)\",\"instant_settlement\": true,\"onchain_address\": \"\(onChainAddress)\", \"feerate\": true, \"feerate_value\": \(feeRate)}", admin: true)
         let result = try await requestType.request(request: request)
         try handleError(data: result.0)
@@ -402,9 +434,40 @@ public struct LNBits {
     // Boltcard
     
     public func createBoltCard(name: String, uid: String, txLimit: Int, dailyLimit: Int, k0: String, k1: String, k2: String, prevk0: String, prevk1: String, prevk2: String) {
-        
     }
     
+}
+
+@available(iOS 13.0.0, macOS 13.0.0,  *)
+public func loginLNBits(url: String, username: String, password: String, tor: SwiftTor?, ssl: Bool = true) async throws -> LoginWallet {
+    let c = url.contains(".onion")
+    var cl: RequestType = ssl ? ClearnetRequest() : ClearnetTrustRequest()
+    let d: RequestType  = c ? tor ?? SwiftTor() : cl
+    var request = URLRequest(url: URL(string: "\(url)\(LNBits.LNBitsRequest.login.rawValue)")!)
+    print(request.url!.absoluteString)
+    request.httpMethod = LNBits.HTTPMethod.post.rawValue
+    request.addValue("application/json", forHTTPHeaderField: "accept")
+    request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.httpBody = "{\"username\": \"\(username)\", \"password\": \"\(password)\"}".data(using: .utf8)
+    print(String(data: request.httpBody!, encoding: .utf8)!)
+    print(request.httpMethod!)
+    let a = try await d.request(request: request)
+    let login = try? JSONDecoder().decode(Login.self, from: a.0)
+    guard let login = login else {
+        let error = String(data: a.0, encoding: .utf8)
+        guard let error = error else {
+            throw "Unknown loginLNBits Error"
+        }
+        throw error
+    }
+    var request2 = URLRequest(url: URL(string: "\(url)\(LNBits.LNBitsRequest.login.rawValue)")!)
+    request2.httpMethod = LNBits.HTTPMethod.get.rawValue
+    request2.addValue("application/json", forHTTPHeaderField: "accept")
+    request2.addValue("application/json", forHTTPHeaderField: "Content-Type")
+    request2.addValue("cookie_access_token=\(login.access_token)", forHTTPHeaderField: "cookie")
+    print(request2.allHTTPHeaderFields!)
+    let b = try await d.request(request: request2)
+    return try JSONDecoder().decode(LoginWallet.self, from: b.0)
 }
 
 public enum LightningType {
@@ -424,6 +487,38 @@ public func checkLightningType(input: String) -> LightningType? {
 
 
 // --------------------------------- Models ------------------------------------
+
+
+public struct LoginWallet: Codable {
+    public let id, email, username: String
+    public let extensions: [String]
+    public let wallets: [Wallet]
+    public let admin, super_user, has_password: Bool
+    public let config: Config
+//    let createdAt, updatedAt: JSONNull?
+    
+    public struct Config: Codable {
+        public let email_verified: Bool
+//        let firstName, lastName, displayName, picture: JSONNull?
+        public let provider: String
+    }
+    
+    public struct Wallet: Codable {
+        public let id, name, user, adminkey: String
+        public let inkey: String
+//        let currency: JSONNull?
+        public let balance_msat: Int
+        public let deleted: Bool
+        public let created_at, updated_at: Int
+    }
+}
+
+
+
+public struct Login: Codable {
+    public let access_token, token_type: String
+}
+
 
 public struct RefundSubMarineSwap: Codable, Hashable {
     public let id, wallet: String
@@ -771,14 +866,10 @@ public struct LNBitsTransaction: Codable, Hashable {
     public let bolt11, preimage, payment_hash: String
     public let expiry: Int
     public let wallet_id: String
+    public let status: String
     
-    static public let demo = LNBitsTransaction(checking_id: "checking_id", pending: false, amount: 1, fee: 1, memo: "memo", time: 0, bolt11: "bolt11", preimage: "preimage", payment_hash: "payment_hash", expiry: 0, wallet_id: "wallet_id")
+    static public let demo = LNBitsTransaction(checking_id: "checking_id", pending: false, amount: 1, fee: 1, memo: "memo", time: 0, bolt11: "bolt11", preimage: "preimage", payment_hash: "payment_hash", expiry: 0, wallet_id: "wallet_id", status: "failed")
 }
-
-public enum LNBitsErr: Error {
-    case error(String)
-}
-
 
 public typealias LNBitsTransactions = [LNBitsTransaction]
 
@@ -791,26 +882,30 @@ public struct LNBitsKeys: Codable, Hashable {
     let user: String
 }
 
+extension String: Error {
+    
+}
 
 @available(iOS 13.0.0, macOS 13.0.0, *)
-public func LNBitsURL(input: String, tor: SwiftTor? = nil) async throws -> LNBits {
-    guard let url = URL(string: input) else {throw LNBitsErr.error("Not a URL")}
+public func LNBitsURL(input: String, tor: SwiftTor? = nil, ssl: Bool = true) async throws -> LNBits {
+    guard let url = URL(string: input) else {throw "Not a URL"}
     let serverURL = convertToServer(input)
     let c = serverURL.suffix(6) == ".onion"
-    let d: RequestType  = c ? tor ?? SwiftTor() : ClearnetRequest()
+    var cl: RequestType = ssl ? ClearnetRequest() : ClearnetTrustRequest()
+    let d: RequestType  = c ? tor ?? SwiftTor() : cl
     print(url.absoluteString)
     let e = try await d.request(request: URLRequest(url: url))
     print(String(data: e.0, encoding: .utf8)!)
     let keys = try lnbitsHTMLToKeys(input: e.0)
-    return LNBits(server: serverURL, adminKey: keys.adminkey, walletID: keys.id, user: keys.user, tor: tor)
+    return LNBits(server: serverURL, adminKey: keys.adminkey, walletID: keys.id, user: keys.user, tor: tor, ssl: ssl)
 }
 
 func lnbitsHTMLToKeys(input: Data) throws -> LNBitsKeys {
-    guard let f = String(data: input, encoding: .utf8) else {throw LNBitsErr.error("Request result is not a String")}
-    guard let rangeStart = f.range(of: "window.wallet = ") else {throw LNBitsErr.error("Not found window.wallet = ")}
-    guard let rangeEnd = f.range(of: ";", range: rangeStart.upperBound..<f.endIndex) else {throw LNBitsErr.error("Not found ;")}
-    guard let a = String(f[rangeStart.upperBound..<rangeEnd.lowerBound]).data(using: .utf8) else {throw LNBitsErr.error("Not found lower and upper Bound")}
-    guard let b = try? JSONDecoder().decode(LNBitsKeys.self, from: a) else {throw LNBitsErr.error("Error Decoding")}
+    guard let f = String(data: input, encoding: .utf8) else {throw "Request result is not a String"}
+    guard let rangeStart = f.range(of: "window.wallet = ") else {throw "Not found window.wallet = "}
+    guard let rangeEnd = f.range(of: ";", range: rangeStart.upperBound..<f.endIndex) else {throw "Not found ;"}
+    guard let a = String(f[rangeStart.upperBound..<rangeEnd.lowerBound]).data(using: .utf8) else {throw "Not found lower and upper Bound"}
+    guard let b = try? JSONDecoder().decode(LNBitsKeys.self, from: a) else {throw "Error Decoding"}
     return b
 }
 
@@ -833,7 +928,7 @@ public func getNewLNBitsWallet(server: String, tor: SwiftTor? = nil) async throw
     let c = server.suffix(6) == ".onion"
     let clearURL = convertToServer(server)
     let serverURL = "\(clearURL)/wallet"
-    guard let url = URL(string: serverURL) else {throw LNBitsErr.error("Not a URL")}
+    guard let url = URL(string: serverURL) else {throw "Not a URL"}
     let d: RequestType  = c ? tor ?? SwiftTor() : ClearnetRequest()
     let e = try await d.request(request: URLRequest(url: url))
     let keys = try lnbitsHTMLToKeys(input: e.0)
@@ -843,7 +938,7 @@ public func getNewLNBitsWallet(server: String, tor: SwiftTor? = nil) async throw
 @available(iOS 13.0.0, macOS 13.0.0, *)
 public func getDemoLNBits() async throws -> LNBits {
     let serverURL = "https://legend.lnbits.com/wallet"
-    guard let url = URL(string: serverURL) else {throw LNBitsErr.error("Not a URL")}
+    guard let url = URL(string: serverURL) else {throw "Not a URL"}
     let d = ClearnetRequest()
     let e = try await d.request(request: URLRequest(url: url))
     let keys = try lnbitsHTMLToKeys(input: e.0)
