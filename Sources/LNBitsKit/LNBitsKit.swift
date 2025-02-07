@@ -135,13 +135,13 @@ public struct LNBits {
         let c = try await requestType.request(request: a)
         let r = try JSONDecoder().decode(Invoice.self, from: c.0)
         if debug == .all {
-            print(r.paymentRequest)
+            print(r.bolt11)
         }
         return try r
     }
     
     public func checkIfPaid(invoice: Invoice) async throws -> Bool {
-        let a = getRequest(for: .invoice, method: .get, urlExtention: invoice.paymentHash)
+        let a = getRequest(for: .invoice, method: .get, urlExtention: invoice.payment_hash)
         let b = try await requestType.request(request: a)
         let c = try JSONDecoder().decode(CheckPaid.self, from: b.0)
         return c.paid
@@ -337,7 +337,7 @@ public struct LNBits {
         
         let invoice = try await createInvoice(sats: amount ?? ln.max!, memo: memo)
         
-        let lnurlBackURL = ln.callback! + "&pr=" + invoice.paymentRequest
+        let lnurlBackURL = ln.callback! + "&pr=" + invoice.bolt11
         
         var request = URLRequest(url: URL(string: lnurlBackURL)!)
         request.httpMethod = "GET"
@@ -760,15 +760,10 @@ public struct Balance: Codable {
 }
 
 public struct Invoice: Codable, Hashable, Equatable {
-    public let paymentHash, paymentRequest, checkingID: String
-
-    enum CodingKeys: String, CodingKey {
-        case paymentHash = "payment_hash"
-        case paymentRequest = "payment_request"
-        case checkingID = "checking_id"
-    }
+    public let checking_id, payment_hash, wallet_id, bolt11, status, memo, expiry, preimage, time, created_at, updated_at: String
+    public let amount, fee: Int
     
-    public static let demo = Invoice(paymentHash: "", paymentRequest: "", checkingID: "")
+    public static let demo = Invoice(checking_id: "checking_id", payment_hash: "payment_hash", wallet_id: "wallet_id", bolt11: "bolt11", status: "status", memo: "memo", expiry: "expiry", preimage: "preimage", time: "time", created_at: "created_at", updated_at: "updated_at", amount: 1, fee: 1)
 }
 
 public struct LNBitsError: Codable {
@@ -866,8 +861,9 @@ public struct LNBitsTransaction: Codable, Hashable {
     public let bolt11, preimage, payment_hash: String
     public let expiry: Int
     public let wallet_id: String
+    public let status: String
     
-    static public let demo = LNBitsTransaction(checking_id: "checking_id", pending: false, amount: 1, fee: 1, memo: "memo", time: 0, bolt11: "bolt11", preimage: "preimage", payment_hash: "payment_hash", expiry: 0, wallet_id: "wallet_id")
+    static public let demo = LNBitsTransaction(checking_id: "checking_id", pending: false, amount: 1, fee: 1, memo: "memo", time: 0, bolt11: "bolt11", preimage: "preimage", payment_hash: "payment_hash", expiry: 0, wallet_id: "wallet_id", status: "failed")
 }
 
 public typealias LNBitsTransactions = [LNBitsTransaction]
