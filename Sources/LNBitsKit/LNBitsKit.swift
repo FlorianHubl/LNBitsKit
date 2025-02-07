@@ -866,8 +866,9 @@ public struct LNBitsTransaction: Codable, Hashable {
     public let bolt11, preimage, payment_hash: String
     public let expiry: Int
     public let wallet_id: String
+    public let status: String
     
-    static public let demo = LNBitsTransaction(checking_id: "checking_id", pending: false, amount: 1, fee: 1, memo: "memo", time: 0, bolt11: "bolt11", preimage: "preimage", payment_hash: "payment_hash", expiry: 0, wallet_id: "wallet_id")
+    static public let demo = LNBitsTransaction(checking_id: "checking_id", pending: false, amount: 1, fee: 1, memo: "memo", time: 0, bolt11: "bolt11", preimage: "preimage", payment_hash: "payment_hash", expiry: 0, wallet_id: "wallet_id", status: "failed")
 }
 
 public typealias LNBitsTransactions = [LNBitsTransaction]
